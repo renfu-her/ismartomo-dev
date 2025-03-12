@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import 'services/api_service.dart';
-import 'pages/banner_page.dart';
 import 'pages/category_page.dart';
 import 'pages/cart_page.dart';
+import 'pages/product_detail_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -20,9 +19,9 @@ class TextSizeConfig {
   static double widthMultiplier = 0;
   
   static void init(BuildContext context) {
-    MediaQueryData _mediaQueryData = MediaQuery.of(context);
-    _screenWidth = _mediaQueryData.size.width;
-    _screenHeight = _mediaQueryData.size.height;
+    MediaQueryData mediaQueryData = MediaQuery.of(context);
+    _screenWidth = mediaQueryData.size.width;
+    _screenHeight = mediaQueryData.size.height;
     
     _blockSizeHorizontal = _screenWidth! / 100;
     _blockSizeVertical = _screenHeight! / 100;
@@ -110,6 +109,20 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const HomePage(),
+      routes: {
+        '/cart': (context) => const CartPage(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/product') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) {
+              return ProductDetailPage(productDetails: args['productDetails']);
+            },
+          );
+        }
+        return null;
+      },
     );
   }
 }
@@ -248,9 +261,7 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.shopping_cart),
             onPressed: () {
               // 購物車功能
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('購物車功能待實現')),
-              );
+              Navigator.of(context).pushNamed('/cart');
             },
           ),
         ],
@@ -288,53 +299,6 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-  }
-  
-  String _getBottomNavItemName(int index) {
-    switch (index) {
-      case 0: return '首頁';
-      case 1: return '分類';
-      case 2: return '購物車';
-      case 3: return '收藏';
-      case 4: return '我的';
-      default: return '';
-    }
-  }
-  
-  void _showProductDetails(Map<String, dynamic> product) async {
-    if (product['product_id'] != null) {
-      try {
-        // 顯示加載對話框
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
-        );
-        
-        // 獲取產品詳情
-        final details = await _apiService.getProductDetails(product['product_id'].toString());
-        
-        // 關閉加載對話框
-        Navigator.of(context).pop();
-        
-        // 顯示產品詳情頁面
-        if (mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ProductDetailPage(productDetails: details),
-            ),
-          );
-        }
-      } catch (e) {
-        // 關閉加載對話框
-        Navigator.of(context).pop();
-        
-        // 顯示錯誤信息
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('無法獲取產品詳情: ${e.toString()}')),
-        );
-      }
-    }
   }
 }
 
@@ -605,37 +569,11 @@ class _HomeContentState extends State<HomeContent> {
   
   void _showProductDetails(Map<String, dynamic> product) async {
     if (product['product_id'] != null) {
-      try {
-        // 顯示加載對話框
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
-        );
-        
-        // 獲取產品詳情
-        final details = await _apiService.getProductDetails(product['product_id'].toString());
-        
-        // 關閉加載對話框
-        Navigator.of(context).pop();
-        
-        // 顯示產品詳情頁面
-        if (mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ProductDetailPage(productDetails: details),
-            ),
-          );
-        }
-      } catch (e) {
-        // 關閉加載對話框
-        Navigator.of(context).pop();
-        
-        // 顯示錯誤信息
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('無法獲取產品詳情: ${e.toString()}')),
-        );
-      }
+      print('顯示產品詳情，產品ID: ${product['product_id']}');
+      Navigator.of(context).pushNamed(
+        '/product',
+        arguments: {'productDetails': product},
+      );
     }
   }
 }
@@ -841,37 +779,11 @@ class _ProductListPageState extends State<ProductListPage> {
   
   void _showProductDetails(Map<String, dynamic> product) async {
     if (product['product_id'] != null) {
-      try {
-        // 顯示加載對話框
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
-        );
-        
-        // 獲取產品詳情
-        final details = await _apiService.getProductDetails(product['product_id'].toString());
-        
-        // 關閉加載對話框
-        Navigator.of(context).pop();
-        
-        // 顯示產品詳情頁面
-        if (mounted) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ProductDetailPage(productDetails: details),
-            ),
-          );
-        }
-      } catch (e) {
-        // 關閉加載對話框
-        Navigator.of(context).pop();
-        
-        // 顯示錯誤信息
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('無法獲取產品詳情: ${e.toString()}')),
-        );
-      }
+      print('顯示產品詳情，產品ID: ${product['product_id']}');
+      Navigator.of(context).pushNamed(
+        '/product',
+        arguments: {'productDetails': product},
+      );
     }
   }
 }
@@ -889,7 +801,17 @@ class ProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        if (onTap != null) {
+          onTap!();
+        } else if (product['product_id'] != null) {
+          // 導航到產品詳情頁面
+          Navigator.of(context).pushNamed(
+            '/product',
+            arguments: {'productDetails': product},
+          );
+        }
+      },
       child: Card(
         clipBehavior: Clip.antiAlias,
         elevation: 2.0,
@@ -974,8 +896,17 @@ class ProductCard extends StatelessWidget {
                           constraints: const BoxConstraints(),
                           icon: const FaIcon(FontAwesomeIcons.cartShopping, size: 18),
                           onPressed: () {
+                            // 添加商品到購物車
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已加入購物車')),
+                              SnackBar(
+                                content: Text('已將 ${product['name']} 加入購物車'),
+                                action: SnackBarAction(
+                                  label: '查看購物車',
+                                  onPressed: () {
+                                    Navigator.of(context).pushNamed('/cart');
+                                  },
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -998,115 +929,5 @@ class ProductCard extends StatelessWidget {
   }
 }
 
-class ProductDetailPage extends StatelessWidget {
-  final Map<String, dynamic> productDetails;
-  
-  const ProductDetailPage({super.key, required this.productDetails});
-  
-  @override
-  Widget build(BuildContext context) {
-    // 獲取產品數據
-    final product = productDetails.containsKey('product') ? productDetails['product'] : {};
-    
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(product['name'] ?? '產品詳情'),
-      ),
-      body: product.isEmpty 
-        ? const Center(child: Text('無法獲取產品詳情'))
-        : SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 產品圖片
-                if (product['thumb'] != null)
-                  Container(
-                    width: double.infinity,
-                    height: 250,
-                    color: Colors.white, // 確保圖片容器背景為白色
-                    child: Image.network(
-                      product['thumb'].startsWith('http') 
-                          ? product['thumb'] 
-                          : 'https://ismartdemo.com.tw/image/${product['thumb']}',
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Center(
-                          child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey),
-                        );
-                      },
-                    ),
-                  ),
-                
-                // 產品信息
-                Container(
-                  color: Colors.white, // 確保產品信息區域背景為白色
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product['name'] ?? '未知產品',
-                        style: TextStyle(
-                          fontSize: TextSizeConfig.calculateTextSize(20),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (product['price'] != null)
-                        Text(
-                          '價格: ${product['price']}',
-                          style: TextStyle(
-                            fontSize: TextSizeConfig.calculateTextSize(18),
-                            color: Colors.green,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      if (product['model'] != null)
-                        Text(
-                          '型號: ${product['model']}',
-                          style: TextStyle(
-                            fontSize: TextSizeConfig.calculateTextSize(14),
-                          ),
-                        ),
-                      if (product['quantity'] != null)
-                        Text(
-                          '庫存: ${product['quantity']}',
-                          style: TextStyle(
-                            fontSize: TextSizeConfig.calculateTextSize(14),
-                            color: int.parse(product['quantity'].toString()) > 0 ? Colors.green : Colors.red,
-                          ),
-                        ),
-                      if (product['manufacturer'] != null)
-                        Text(
-                          '製造商: ${product['manufacturer']}',
-                          style: TextStyle(
-                            fontSize: TextSizeConfig.calculateTextSize(14),
-                          ),
-                        ),
-                      
-                      const SizedBox(height: 16),
-                      Text(
-                        '產品描述',
-                        style: TextStyle(
-                          fontSize: TextSizeConfig.calculateTextSize(16),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      if (product['description'] != null)
-                        Text(_stripHtmlTags(product['description'])),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-    );
-  }
-  
-  // 移除 HTML 標籤的輔助函數
-  String _stripHtmlTags(String htmlText) {
-    RegExp exp = RegExp(r"<[^>]*>", multiLine: true, caseSensitive: true);
-    return htmlText.replaceAll(exp, '');
-  }
-}
+// 注意：ProductDetailPage 已移至 pages/product_detail_page.dart
+// 請使用 import 'pages/product_detail_page.dart' 來引用

@@ -47,7 +47,28 @@ class ApiService {
   
   // 獲取產品詳情
   Future<Map<String, dynamic>> getProductDetails(String productId) async {
-    return _get('gws_appproduct', extraParams: {'product_id': productId});
+    try {
+      // 直接構建完整的 URL
+      String url = 'https://ismartdemo.com.tw/index.php?route=extension/module/api/gws_appproduct&api_key=$_apiKey&product_id=$productId';
+      
+      print('獲取產品詳情，URL: $url');
+      
+      // 發送請求
+      final response = await _dio.get(url);
+      
+      // 檢查響應
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else {
+          throw Exception('返回數據格式錯誤');
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('API 請求錯誤: ${e.toString()}');
+    }
   }
   
   // 搜索產品
@@ -69,7 +90,16 @@ class ApiService {
   Future<Map<String, dynamic>> _get(String endpoint, {Map<String, dynamic>? extraParams}) async {
     try {
       // 構建完整的 URL
-      String url = '$_baseUrl/$endpoint&api_key=$_apiKey';
+      String url;
+      
+      // 檢查 endpoint 是否包含斜杠
+      if (endpoint.contains('/')) {
+        // 如果包含斜杠，則使用原始 endpoint
+        url = '${_baseUrl}/$endpoint&api_key=$_apiKey';
+      } else {
+        // 如果不包含斜杠，則直接添加 endpoint
+        url = '${_baseUrl}/$endpoint&api_key=$_apiKey';
+      }
       
       // 添加額外的參數
       if (extraParams != null && extraParams.isNotEmpty) {
@@ -77,40 +107,11 @@ class ApiService {
           url += '&$key=$value';
         });
       }
+      
+      print('請求 URL: $url'); // 添加日誌以便調試
       
       // 發送請求
       final response = await _dio.get(url);
-      
-      // 檢查響應
-      if (response.statusCode == 200) {
-        if (response.data is Map) {
-          return response.data;
-        } else {
-          throw Exception('返回數據格式錯誤');
-        }
-      } else {
-        throw Exception('請求失敗: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('API 請求錯誤: ${e.toString()}');
-    }
-  }
-  
-  // 通用 POST 請求方法
-  Future<Map<String, dynamic>> _post(String endpoint, {Map<String, dynamic>? data, Map<String, dynamic>? extraParams}) async {
-    try {
-      // 構建完整的 URL
-      String url = '$_baseUrl/$endpoint&api_key=$_apiKey';
-      
-      // 添加額外的參數
-      if (extraParams != null && extraParams.isNotEmpty) {
-        extraParams.forEach((key, value) {
-          url += '&$key=$value';
-        });
-      }
-      
-      // 發送請求
-      final response = await _dio.post(url, data: data);
       
       // 檢查響應
       if (response.statusCode == 200) {
