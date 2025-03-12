@@ -202,61 +202,46 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     ),
                                     const SizedBox(height: 16),
                                     
-                                    // 價格顯示
+                                    // 價格顯示 - 改為紅色
                                     if (_productData['price'] != null)
                                       Text(
-                                        '價格: ${_productData['price']}',
+                                        '${_productData['price']}',
                                         style: const TextStyle(
                                           fontSize: 20,
-                                          color: Colors.green,
+                                          color: Colors.red,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     
-                                    // 型號顯示
-                                    if (_productData['model'] != null)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8.0),
-                                        child: Text(
-                                          '型號: ${_productData['model']}',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                    
-                                    // 庫存顯示
-                                    if (_productData['quantity'] != null)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8.0),
-                                        child: Text(
-                                          '庫存: ${_productData['quantity']}',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.green,
-                                          ),
-                                        ),
-                                      ),
+                                    // 移除型號和庫存顯示
                                   ],
                                 ),
                                 
                                 const SizedBox(height: 16),
                                 
-                                // 庫存狀態
+                                // 庫存狀態 - 根據狀態調整顏色
                                 if (_productData['stock_status'] != null)
                                   Container(
                                     margin: const EdgeInsets.only(top: 8.0),
                                     padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
                                     decoration: BoxDecoration(
-                                      color: Colors.green.shade50,
+                                      color: _productData['stock_status'] == '缺貨中-待補貨' 
+                                          ? Colors.red.shade50 
+                                          : Colors.green.shade50,
                                       borderRadius: BorderRadius.circular(4.0),
-                                      border: Border.all(color: Colors.green.shade100),
+                                      border: Border.all(
+                                        color: _productData['stock_status'] == '缺貨中-待補貨' 
+                                            ? Colors.red.shade100 
+                                            : Colors.green.shade100
+                                      ),
                                     ),
                                     child: Text(
                                       _productData['stock_status'],
                                       style: TextStyle(
                                         fontSize: 14,
-                                        color: Colors.green.shade700,
+                                        color: _productData['stock_status'] == '缺貨中-待補貨' 
+                                            ? Colors.red.shade700 
+                                            : Colors.green.shade700,
                                       ),
                                     ),
                                   ),
@@ -271,65 +256,66 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 
                                 const SizedBox(height: 24),
                                 
-                                // 數量選擇
-                                Row(
-                                  children: [
-                                    const Text(
-                                      '數量',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                // 數量選擇 - 缺貨時隱藏
+                                if (_productData['stock_status'] != '缺貨中-待補貨')
+                                  Row(
+                                    children: [
+                                      const Text(
+                                        '數量',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                    const Spacer(),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.grey.shade300),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          // 減號按鈕
-                                          InkWell(
-                                            onTap: _decreaseQuantity,
-                                            child: Container(
-                                              width: 40,
-                                              height: 40,
-                                              alignment: Alignment.center,
-                                              child: const Icon(Icons.remove, size: 20),
-                                            ),
-                                          ),
-                                          // 數量顯示
-                                          Container(
-                                            width: 60,
-                                            height: 40,
-                                            alignment: Alignment.center,
-                                            decoration: BoxDecoration(
-                                              border: Border(
-                                                left: BorderSide(color: Colors.grey.shade300),
-                                                right: BorderSide(color: Colors.grey.shade300),
+                                      const Spacer(),
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: Colors.grey.shade300),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            // 減號按鈕
+                                            InkWell(
+                                              onTap: _decreaseQuantity,
+                                              child: Container(
+                                                width: 40,
+                                                height: 40,
+                                                alignment: Alignment.center,
+                                                child: const Icon(Icons.remove, size: 20),
                                               ),
                                             ),
-                                            child: Text(
-                                              '$_quantity',
-                                              style: const TextStyle(fontSize: 16),
-                                            ),
-                                          ),
-                                          // 加號按鈕
-                                          InkWell(
-                                            onTap: _increaseQuantity,
-                                            child: Container(
-                                              width: 40,
+                                            // 數量顯示
+                                            Container(
+                                              width: 60,
                                               height: 40,
                                               alignment: Alignment.center,
-                                              child: const Icon(Icons.add, size: 20),
+                                              decoration: BoxDecoration(
+                                                border: Border(
+                                                  left: BorderSide(color: Colors.grey.shade300),
+                                                  right: BorderSide(color: Colors.grey.shade300),
+                                                ),
+                                              ),
+                                              child: Text(
+                                                '$_quantity',
+                                                style: const TextStyle(fontSize: 16),
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                            // 加號按鈕
+                                            InkWell(
+                                              onTap: _increaseQuantity,
+                                              child: Container(
+                                                width: 40,
+                                                height: 40,
+                                                alignment: Alignment.center,
+                                                child: const Icon(Icons.add, size: 20),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                ),
+                                    ],
+                                  ),
                                 
                                 const SizedBox(height: 24),
                                 
@@ -395,9 +381,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             height: 50,
                             margin: const EdgeInsets.only(right: 8),
                             child: ElevatedButton(
-                              onPressed: _addToCart,
+                              onPressed: _productData['stock_status'] == '缺貨中-待補貨' ? () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('此商品已售完，暫時無法購買')),
+                                );
+                              } : _addToCart,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF6A3DE8), // 紫色背景
+                                backgroundColor: _productData['stock_status'] == '缺貨中-待補貨' 
+                                    ? Colors.red.shade400  // 缺貨時使用紅色背景
+                                    : const Color(0xFF6A3DE8), // 有庫存時使用紫色背景
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30), // 圓角
@@ -406,11 +398,16 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(Icons.shopping_cart, size: 20),
+                                  Icon(_productData['stock_status'] == '缺貨中-待補貨' 
+                                      ? Icons.info_outline  // 缺貨時使用提示圖標
+                                      : Icons.shopping_cart, // 有庫存時使用購物車圖標
+                                      size: 20),
                                   const SizedBox(width: 8),
-                                  const Text(
-                                    '加入購物車',
-                                    style: TextStyle(
+                                  Text(
+                                    _productData['stock_status'] == '缺貨中-待補貨' 
+                                        ? '產品已售完'  // 缺貨時顯示"產品已售完"
+                                        : '加入購物車', // 有庫存時顯示"加入購物車"
+                                    style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
