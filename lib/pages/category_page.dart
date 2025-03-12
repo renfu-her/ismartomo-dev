@@ -103,8 +103,14 @@ class _CategoryPageState extends State<CategoryPage> {
                             if (hasChildren) {
                               _toggleCategory(categoryId);
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('您選擇了: ${category['name']}')),
+                              // 導航到產品列表頁面
+                              Navigator.pushNamed(
+                                context, 
+                                '/product_list',
+                                arguments: {
+                                  'category_id': categoryId,
+                                  'category_name': category['name'],
+                                },
                               );
                             }
                           },
@@ -171,8 +177,14 @@ class _CategoryPageState extends State<CategoryPage> {
                                 children: [
                                   InkWell(
                                     onTap: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('您選擇了子分類: ${subCategory['name']}')),
+                                      // 導航到產品列表頁面
+                                      Navigator.pushNamed(
+                                        context, 
+                                        '/product_list',
+                                        arguments: {
+                                          'category_id': subCategory['category_id'].toString(),
+                                          'category_name': subCategory['name'],
+                                        },
                                       );
                                     },
                                     child: Padding(

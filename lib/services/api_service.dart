@@ -45,6 +45,27 @@ class ApiService {
     return _get('gws_appcategory_products', extraParams: {'category_id': categoryId});
   }
   
+  // 獲取產品列表（根據分類ID，支持排序）
+  Future<Map<String, dynamic>> getProductList({
+    required String categoryId,
+    String? sort,
+    String? order,
+  }) async {
+    Map<String, dynamic> params = {'category_id': categoryId};
+    
+    // 添加排序參數
+    if (sort != null && sort.isNotEmpty) {
+      params['sort'] = sort;
+    }
+    
+    // 添加排序方向參數
+    if (order != null && order.isNotEmpty) {
+      params['order'] = order;
+    }
+    
+    return _get('gws_products', extraParams: params);
+  }
+  
   // 獲取產品詳情
   Future<Map<String, dynamic>> getProductDetails(String productId) async {
     try {

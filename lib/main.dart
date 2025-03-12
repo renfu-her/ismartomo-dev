@@ -3,6 +3,7 @@ import 'services/api_service.dart';
 import 'pages/category_page.dart';
 import 'pages/cart_page.dart';
 import 'pages/product_detail_page.dart';
+import 'pages/product_list_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -118,6 +119,22 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(
             builder: (context) {
               return ProductDetailPage(productDetails: args['productDetails']);
+            },
+          );
+        }
+        if (settings.name == '/product_detail') {
+          final args = settings.arguments;
+          return MaterialPageRoute(
+            builder: (context) {
+              return ProductDetailPage(productDetails: args as Map<String, dynamic>);
+            },
+          );
+        }
+        if (settings.name == '/product_list') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) {
+              return ProductListPage(arguments: args);
             },
           );
         }
@@ -578,8 +595,8 @@ class _HomeContentState extends State<HomeContent> {
   }
 }
 
-class ProductListPage extends StatefulWidget {
-  const ProductListPage({
+class ProductListPageOld extends StatefulWidget {
+  const ProductListPageOld({
     super.key, 
     required this.title,
     this.initialEndpoint = 'popular',
@@ -589,10 +606,10 @@ class ProductListPage extends StatefulWidget {
   final String initialEndpoint;
 
   @override
-  State<ProductListPage> createState() => _ProductListPageState();
+  State<ProductListPageOld> createState() => _ProductListPageOldState();
 }
 
-class _ProductListPageState extends State<ProductListPage> {
+class _ProductListPageOldState extends State<ProductListPageOld> {
   final ApiService _apiService = ApiService();
   List<dynamic> _products = [];
   bool _isLoading = true;
