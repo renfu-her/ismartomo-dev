@@ -51,6 +51,7 @@ class MyApp extends StatelessWidget {
     
     return MaterialApp(
       title: 'API 數據展示',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         scaffoldBackgroundColor: Colors.white,
