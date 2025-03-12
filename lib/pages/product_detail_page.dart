@@ -214,10 +214,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(_productData['name'] ?? '產品明細'),
+        title: const Text('產品明細'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.favorite_border),
+            icon: const Icon(Icons.favorite_border, color: Colors.red),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('已加入收藏')),
