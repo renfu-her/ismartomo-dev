@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'services/api_service.dart';
 import 'pages/banner_page.dart';
 import 'pages/category_page.dart';
+import 'pages/cart_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -140,7 +141,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const HomeContent(),
     const CategoryPage(),
-    const Center(child: Text('購物車頁面開發中...')),
+    const CartPage(),
     const Center(child: Text('收藏頁面開發中...')),
     const Center(child: Text('我的頁面開發中...')),
   ];
