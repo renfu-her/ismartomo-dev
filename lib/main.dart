@@ -5,6 +5,38 @@ import 'pages/banner_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
+// 添加一個通用的文字大小計算類
+class TextSizeConfig {
+  static double? _screenWidth;
+  static double? _screenHeight;
+  static double _blockSizeHorizontal = 0;
+  static double _blockSizeVertical = 0;
+  
+  static double textMultiplier = 0;
+  static double imageSizeMultiplier = 0;
+  static double heightMultiplier = 0;
+  static double widthMultiplier = 0;
+  
+  static void init(BuildContext context) {
+    MediaQueryData _mediaQueryData = MediaQuery.of(context);
+    _screenWidth = _mediaQueryData.size.width;
+    _screenHeight = _mediaQueryData.size.height;
+    
+    _blockSizeHorizontal = _screenWidth! / 100;
+    _blockSizeVertical = _screenHeight! / 100;
+    
+    textMultiplier = _blockSizeVertical;
+    imageSizeMultiplier = _blockSizeHorizontal;
+    heightMultiplier = _blockSizeVertical;
+    widthMultiplier = _blockSizeHorizontal;
+  }
+  
+  // 根據設計稿的文字大小計算實際顯示大小
+  static double calculateTextSize(double size) {
+    return size * textMultiplier / 6.5; // 6.5 是一個基準值，可以根據需要調整
+  }
+}
+
 void main() {
   runApp(const MyApp());
 }
@@ -14,19 +46,63 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 初始化文字大小配置
+    TextSizeConfig.init(context);
+    
     return MaterialApp(
       title: 'API 數據展示',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         scaffoldBackgroundColor: Colors.white,
         cardColor: Colors.white,
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           elevation: 0,
+          titleTextStyle: TextStyle(
+            color: Colors.black,
+            fontSize: TextSizeConfig.calculateTextSize(18),
+            fontWeight: FontWeight.bold,
+          ),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
+        ),
+        // 設置通用文字主題
+        textTheme: TextTheme(
+          // 大標題
+          headlineLarge: TextStyle(
+            fontSize: TextSizeConfig.calculateTextSize(24),
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          // 中標題
+          headlineMedium: TextStyle(
+            fontSize: TextSizeConfig.calculateTextSize(18),
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          // 小標題
+          headlineSmall: TextStyle(
+            fontSize: TextSizeConfig.calculateTextSize(16),
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          // 正文
+          bodyLarge: TextStyle(
+            fontSize: TextSizeConfig.calculateTextSize(14),
+            color: Colors.black,
+          ),
+          // 小正文
+          bodyMedium: TextStyle(
+            fontSize: TextSizeConfig.calculateTextSize(12),
+            color: Colors.black,
+          ),
+          // 標籤
+          labelMedium: TextStyle(
+            fontSize: TextSizeConfig.calculateTextSize(10),
+            color: Colors.grey,
+          ),
         ),
         useMaterial3: true,
       ),
@@ -249,8 +325,8 @@ class _HomePageState extends State<HomePage> {
                           child: Center(
                             child: Text(
                               '最新產品',
-                              style: const TextStyle(
-                                fontSize: 18,
+                              style: TextStyle(
+                                fontSize: TextSizeConfig.calculateTextSize(18),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -263,7 +339,7 @@ class _HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            childAspectRatio: 0.7,
+                            childAspectRatio: 0.65,
                             crossAxisSpacing: 10.0,
                             mainAxisSpacing: 10.0,
                           ),
@@ -287,8 +363,8 @@ class _HomePageState extends State<HomePage> {
                           child: Center(
                             child: Text(
                               '熱門產品',
-                              style: const TextStyle(
-                                fontSize: 18,
+                              style: TextStyle(
+                                fontSize: TextSizeConfig.calculateTextSize(18),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -301,7 +377,7 @@ class _HomePageState extends State<HomePage> {
                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            childAspectRatio: 0.7,
+                            childAspectRatio: 0.65,
                             crossAxisSpacing: 10.0,
                             mainAxisSpacing: 10.0,
                           ),
@@ -590,7 +666,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 padding: const EdgeInsets.all(8.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.7,
+                  childAspectRatio: 0.65,
                   crossAxisSpacing: 10.0,
                   mainAxisSpacing: 10.0,
                 ),
@@ -698,8 +774,8 @@ class ProductCard extends StatelessWidget {
                 children: [
                   Text(
                     product['name'] ?? '未知產品',
-                    style: const TextStyle(
-                      fontSize: 12,
+                    style: TextStyle(
+                      fontSize: TextSizeConfig.calculateTextSize(12),
                       fontWeight: FontWeight.bold,
                     ),
                     maxLines: 1,
@@ -715,8 +791,8 @@ class ProductCard extends StatelessWidget {
                         child: product['price'] != null
                           ? Text(
                               '${product['price']}',
-                              style: const TextStyle(
-                                fontSize: 14,
+                              style: TextStyle(
+                                fontSize: TextSizeConfig.calculateTextSize(14),
                                 color: Colors.red,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -817,8 +893,8 @@ class ProductDetailPage extends StatelessWidget {
                     children: [
                       Text(
                         product['name'] ?? '未知產品',
-                        style: const TextStyle(
-                          fontSize: 20,
+                        style: TextStyle(
+                          fontSize: TextSizeConfig.calculateTextSize(20),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -826,29 +902,40 @@ class ProductDetailPage extends StatelessWidget {
                       if (product['price'] != null)
                         Text(
                           '價格: ${product['price']}',
-                          style: const TextStyle(
-                            fontSize: 18,
+                          style: TextStyle(
+                            fontSize: TextSizeConfig.calculateTextSize(18),
                             color: Colors.green,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                       if (product['model'] != null)
-                        Text('型號: ${product['model']}'),
+                        Text(
+                          '型號: ${product['model']}',
+                          style: TextStyle(
+                            fontSize: TextSizeConfig.calculateTextSize(14),
+                          ),
+                        ),
                       if (product['quantity'] != null)
                         Text(
                           '庫存: ${product['quantity']}',
                           style: TextStyle(
+                            fontSize: TextSizeConfig.calculateTextSize(14),
                             color: int.parse(product['quantity'].toString()) > 0 ? Colors.green : Colors.red,
                           ),
                         ),
                       if (product['manufacturer'] != null)
-                        Text('製造商: ${product['manufacturer']}'),
+                        Text(
+                          '製造商: ${product['manufacturer']}',
+                          style: TextStyle(
+                            fontSize: TextSizeConfig.calculateTextSize(14),
+                          ),
+                        ),
                       
                       const SizedBox(height: 16),
-                      const Text(
+                      Text(
                         '產品描述',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: TextSizeConfig.calculateTextSize(16),
                           fontWeight: FontWeight.bold,
                         ),
                       ),

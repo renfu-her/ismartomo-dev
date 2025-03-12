@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import '../main.dart'; // 導入 TextSizeConfig
 
 class BannerPage extends StatefulWidget {
   const BannerPage({super.key});
@@ -105,12 +106,12 @@ class _BannerPageState extends State<BannerPage> {
             children: [
               // 全幅橫幅輪播
               if (_homeFullBanners.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
                     '全幅橫幅',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: TextSizeConfig.calculateTextSize(18),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -190,9 +191,9 @@ class _BannerPageState extends State<BannerPage> {
                                         ),
                                         child: Text(
                                           banner['title'],
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             color: Colors.white,
-                                            fontSize: 16.0,
+                                            fontSize: TextSizeConfig.calculateTextSize(16),
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
@@ -213,12 +214,12 @@ class _BannerPageState extends State<BannerPage> {
               
               // 頂部橫幅
               if (_homeTopBanners.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
                     '頂部橫幅',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: TextSizeConfig.calculateTextSize(18),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -230,12 +231,12 @@ class _BannerPageState extends State<BannerPage> {
               
               // 頂部右側橫幅
               if (_homeTopRightBanners.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
                   child: Text(
                     '頂部右側橫幅',
                     style: TextStyle(
-                      fontSize: 18,
+                      fontSize: TextSizeConfig.calculateTextSize(18),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -320,9 +321,9 @@ class _BannerPageState extends State<BannerPage> {
                         ),
                         child: Text(
                           banner['title'],
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 12.0,
+                            fontSize: TextSizeConfig.calculateTextSize(12),
                             fontWeight: FontWeight.bold,
                           ),
                           maxLines: 1,
