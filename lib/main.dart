@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'services/api_service.dart';
+import 'services/user_service.dart';
 import 'pages/category_page.dart';
 import 'pages/cart_page.dart';
 import 'pages/product_detail_page.dart';
 import 'pages/product_list_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/login_page.dart';
+import 'pages/register_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// 全局 SharedPreferences 實例
+late SharedPreferences prefs;
 
 // 添加一個通用的文字大小計算類
 class TextSizeConfig {
@@ -40,8 +49,25 @@ class TextSizeConfig {
   }
 }
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  // 確保 Flutter 綁定初始化
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // 初始化 SharedPreferences
+    prefs = await SharedPreferences.getInstance();
+    debugPrint('SharedPreferences 初始化成功');
+  } catch (e) {
+    debugPrint('SharedPreferences 初始化失敗: ${e.toString()}');
+  }
+  
+  runApp(
+    // 使用 ChangeNotifierProvider 提供 UserService 實例
+    ChangeNotifierProvider(
+      create: (context) => UserService(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -113,6 +139,8 @@ class MyApp extends StatelessWidget {
       home: const HomePage(),
       routes: {
         '/cart': (context) => const CartPage(),
+        '/login': (context) => const LoginPage(),
+        '/register': (context) => const RegisterPage(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/product') {
@@ -169,17 +197,18 @@ class _HomePageState extends State<HomePage> {
   String? _logoUrl;
   
   // 頁面列表
-  final List<Widget> _pages = [
-    const HomeContent(),
-    const CategoryPage(),
-    const CartPage(),
-    const Center(child: Text('收藏頁面開發中...')),
-    const ProfilePage(),
-  ];
+  late List<Widget> _pages;
   
   @override
   void initState() {
     super.initState();
+    _pages = [
+      const HomeContent(),
+      const CategoryPage(),
+      const CartPage(),
+      const Center(child: Text('收藏頁面開發中...')),
+      const ProfilePage(),
+    ];
     _fetchHomeData();
     _fetchStoreSettings();
   }

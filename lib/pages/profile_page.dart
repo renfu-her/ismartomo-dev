@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import 'login_page.dart';
+import 'register_page.dart';
+import '../services/user_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -9,9 +13,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // 是否已登入
-  bool _isLoggedIn = false;
-  
   // 會員功能項目列表
   final List<Map<String, dynamic>> _memberFeatures = [
     {'title': '我的訂單', 'icon': FontAwesomeIcons.fileInvoice, 'color': Colors.orange},
@@ -36,85 +37,90 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('會員中心'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('設定功能待實現')),
-              );
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 登入區域
-            if (!_isLoggedIn) 
-              _buildLoginSection()
-            else
-              _buildUserInfoSection(),
-            
-            // 會員功能區
-            if (_isLoggedIn) _buildMemberFeatures(),
-            
-            // 分隔線
-            const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
-            
-            // 相關說明標題
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                '相關說明',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+    // 使用 Consumer 來監聽 UserService 的變化
+    return Consumer<UserService>(
+      builder: (context, userService, child) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('會員中心'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('設定功能待實現')),
+                  );
+                },
               ),
-            ),
-            
-            // 相關說明項目列表
-            ListView.separated(
-              physics: const NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: _infoItems.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: FaIcon(_infoItems[index]['icon'], size: 20, color: Colors.grey[600]),
-                  title: Text(_infoItems[index]['title']),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {
-                    // 點擊項目的處理邏輯
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('您點擊了: ${_infoItems[index]['title']}')),
-                    );
-                  },
-                );
-              },
-            ),
-            
-            // 底部版本信息
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Center(
-                child: Text(
-                  'App 版本 1.0.0',
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 12,
+            ],
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 登入區域
+                if (!userService.isLoggedIn) 
+                  _buildLoginSection()
+                else
+                  _buildUserInfoSection(userService),
+                
+                // 會員功能區
+                if (userService.isLoggedIn) _buildMemberFeatures(),
+                
+                // 分隔線
+                const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
+                
+                // 相關說明標題
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    '相關說明',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
+                
+                // 相關說明項目列表
+                ListView.separated(
+                  physics: const NeverScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemCount: _infoItems.length,
+                  separatorBuilder: (context, index) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      leading: FaIcon(_infoItems[index]['icon'], size: 20, color: Colors.grey[600]),
+                      title: Text(_infoItems[index]['title']),
+                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      onTap: () {
+                        // 點擊項目的處理邏輯
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('您點擊了: ${_infoItems[index]['title']}')),
+                        );
+                      },
+                    );
+                  },
+                ),
+                
+                // 底部版本信息
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Center(
+                    child: Text(
+                      'App 版本 1.0.0',
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
   
@@ -148,9 +154,10 @@ class _ProfilePageState extends State<ProfilePage> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () {
-                    // 註冊功能
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('註冊功能待實現')),
+                    // 導向註冊頁面
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const RegisterPage()),
                     );
                   },
                   style: OutlinedButton.styleFrom(
@@ -173,11 +180,12 @@ class _ProfilePageState extends State<ProfilePage> {
               // 登入按鈕
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    // 模擬登入成功
-                    setState(() {
-                      _isLoggedIn = true;
-                    });
+                  onPressed: () async {
+                    // 導向登入頁面
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginPage()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -205,60 +213,97 @@ class _ProfilePageState extends State<ProfilePage> {
   }
   
   // 構建用戶信息區域
-  Widget _buildUserInfoSection() {
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      color: Colors.purple,
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white,
-            child: Icon(
-              Icons.person,
-              size: 40,
-              color: Colors.purple,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '測試用戶',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+  Widget _buildUserInfoSection(UserService userService) {
+    return FutureBuilder<Map<String, String>>(
+      future: userService.getUserData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final userData = snapshot.data ?? {
+          'firstname': '用戶',
+          'lastname': '',
+        };
+        
+        final fullName = '${userData['firstname'] ?? ''} ${userData['lastname'] ?? ''}'.trim();
+        
+        return Container(
+          padding: const EdgeInsets.all(16.0),
+          color: Colors.purple,
+          child: Row(
+            children: [
+              const CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.white,
+                child: Icon(
+                  Icons.person,
+                  size: 40,
+                  color: Colors.purple,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '會員等級: 普通會員',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fullName.isEmpty ? '用戶' : fullName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '會員等級: 普通會員',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              TextButton(
+                onPressed: () {
+                  // 登出功能
+                  _logout(userService);
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('登出'),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              // 登出功能
-              setState(() {
-                _isLoggedIn = false;
-              });
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('登出'),
-          ),
-        ],
-      ),
+        );
+      }
     );
+  }
+  
+  // 登出功能
+  Future<void> _logout(UserService userService) async {
+    try {
+      // 使用 UserService 的登出方法
+      final success = await userService.logout();
+      
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('登出失敗，請稍後再試')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('您已成功登出')),
+        );
+      }
+    } catch (e) {
+      debugPrint('登出錯誤: ${e.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('登出失敗，請稍後再試')),
+      );
+    }
   }
   
   // 構建會員功能區

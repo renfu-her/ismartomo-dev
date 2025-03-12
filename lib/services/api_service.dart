@@ -4,6 +4,12 @@ class ApiService {
   static const String _baseUrl = 'https://ismartdemo.com.tw/index.php?route=extension/module/api';
   static const String _apiKey = 'CNQ4eX5WcbgFQVkBXFKmP9AE2AYUpU2HySz2wFhwCZ3qExG6Tep7ZCSZygwzYfsF';
   
+  // 獲取 API Key
+  String get apiKey => _apiKey;
+  
+  // 獲取基礎 URL
+  String get baseUrl => _baseUrl;
+  
   final Dio _dio = Dio();
   
   // 單例模式
@@ -13,7 +19,72 @@ class ApiService {
     return _instance;
   }
   
-  ApiService._internal();
+  ApiService._internal() {
+    // 初始化 Dio
+    _dio.options.connectTimeout = const Duration(seconds: 10);
+    _dio.options.receiveTimeout = const Duration(seconds: 10);
+    _dio.options.sendTimeout = const Duration(seconds: 10);
+    
+    // 添加攔截器，用於日誌記錄
+    _dio.interceptors.add(LogInterceptor(
+      requestBody: true,
+      responseBody: true,
+      logPrint: (object) {
+        print(object.toString());
+      },
+    ));
+  }
+  
+  // 用戶登入
+  Future<Map<String, dynamic>> login(String email, String password) async {
+    try {
+      // 使用 _get 方法來保持一致性
+      final loginUrl = 'gws_appcustomer/login';
+      print('登入 URL: ${_baseUrl}/$loginUrl&api_key=$_apiKey');
+      
+      final response = await _dio.post(
+        '${_baseUrl}/$loginUrl&api_key=$_apiKey',
+        data: FormData.fromMap({
+          'email': email,
+          'password': password,
+        }),
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) {
+            return status != null && status < 500;
+          },
+        ),
+      );
+      
+      print('登入響應狀態碼: ${response.statusCode}');
+      print('登入響應數據: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else {
+          throw Exception('返回數據格式錯誤');
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('登入錯誤: ${e.toString()}');
+      throw Exception('API 請求錯誤: ${e.toString()}');
+    }
+  }
+  
+  // 獲取用戶資料
+  Future<Map<String, dynamic>> getUserData(String email) async {
+    try {
+      // 使用 _get 方法來保持一致性
+      return _get('gws_appcustomer', extraParams: {'email': email});
+    } catch (e) {
+      print('獲取用戶資料錯誤: ${e.toString()}');
+      throw Exception('API 請求錯誤: ${e.toString()}');
+    }
+  }
   
   // 獲取熱門產品
   Future<Map<String, dynamic>> getPopularProducts() async {
