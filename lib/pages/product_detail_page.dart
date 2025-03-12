@@ -313,7 +313,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                           ),
                                         ),
                                         Text(
-                                          _formatPrice(_finalPrice),
+                                          _formatPrice(_finalPrice * _quantity),
                                           style: TextStyle(
                                             fontSize: 20,
                                             fontWeight: FontWeight.bold,
