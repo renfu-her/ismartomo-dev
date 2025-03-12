@@ -564,54 +564,27 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       children: [
         // 顏色選項
         Wrap(
-          spacing: 12,
-          runSpacing: 12,
+          spacing: 8,
+          runSpacing: 8,
           children: (option['product_option_value'] as List).map<Widget>((value) {
-            // 獲取顏色名稱
-            String colorName = value['name'];
             // 構建選項顯示文本，包含價格信息
-            String priceInfo = '';
+            String optionText = value['name'];
             if (value.containsKey('price') && value['price'] != '0') {
               String pricePrefix = value['price_prefix'] ?? '+';
-              priceInfo = ' (${pricePrefix}${_formatOptionPrice(value['price'])})';
+              optionText += ' (${pricePrefix}${_formatOptionPrice(value['price'])})';
             }
             
-            // 根據顏色名稱決定顯示的顏色
-            Color chipColor = _getColorFromName(colorName);
-            
-            return Tooltip(
-              message: '$colorName$priceInfo',
-              child: GestureDetector(
-                onTap: () {
+            return ChoiceChip(
+              label: Text(optionText),
+              selected: _selectedOptions[option['name']] == value['product_option_value_id'],
+              onSelected: (isSelected) {
+                if (isSelected) {
                   setState(() {
                     _selectedOptions[option['name']] = value['product_option_value_id'];
                     _calculateFinalPrice();
                   });
-                },
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: chipColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: _selectedOptions[option['name']] == value['product_option_value_id']
-                          ? Colors.blue
-                          : Colors.grey.shade300,
-                      width: _selectedOptions[option['name']] == value['product_option_value_id'] ? 2 : 1,
-                    ),
-                  ),
-                  child: _selectedOptions[option['name']] == value['product_option_value_id']
-                      ? const Center(
-                          child: Icon(
-                            Icons.check,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        )
-                      : null,
-                ),
-              ),
+                }
+              },
             );
           }).toList(),
         ),
