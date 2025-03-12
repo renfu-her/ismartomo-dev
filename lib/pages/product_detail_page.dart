@@ -214,7 +214,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text('產品明細'),
+        title: Text(_productData['name'] ?? '產品明細'),
         actions: [
           IconButton(
             icon: const Icon(Icons.favorite_border),
@@ -302,18 +302,26 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     ),
                                     const SizedBox(height: 16),
                                     
-                                    // 價格顯示 - 改為紅色
-                                    if (_productData['price'] != null)
-                                      Text(
-                                        '${_formatPrice(_finalPrice)}',
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          color: Colors.red,
-                                          fontWeight: FontWeight.bold,
+                                    // 價格顯示
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '價格: ',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
-                                      ),
-                                    
-                                    // 移除型號和庫存顯示
+                                        Text(
+                                          _formatPrice(_finalPrice),
+                                          style: TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ],
                                 ),
                                 
@@ -337,9 +345,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   child: Text(
                                     isOutOfStock
                                         ? '缺貨中'
-                                        : _productData.containsKey('quantity') && _productData['quantity'] != null
-                                            ? '庫存: ${_productData['quantity']}'
-                                            : '有庫存',
+                                        : '有現貨',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: isOutOfStock
@@ -479,64 +485,36 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       children: [
                         // 加入購物車按鈕
                         Expanded(
-                          flex: 3,
-                          child: Container(
-                            height: 50,
-                            margin: const EdgeInsets.only(right: 8),
-                            child: ElevatedButton(
-                              onPressed: isOutOfStock ? () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('此商品已售完，暫時無法購買')),
-                                );
-                              } : _addToCart,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isOutOfStock 
-                                    ? Colors.red.shade400  // 缺貨時使用紅色背景
-                                    : const Color(0xFF6A3DE8), // 有庫存時使用紫色背景
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30), // 圓角
-                                ),
+                          child: ElevatedButton(
+                            onPressed: isOutOfStock
+                                ? null
+                                : () {
+                                    // 加入購物車邏輯
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text('已加入購物車'),
+                                        duration: Duration(seconds: 2),
+                                      ),
+                                    );
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isOutOfStock ? Colors.grey : Colors.white,
+                              foregroundColor: isOutOfStock ? Colors.white : Colors.black,
+                              padding: EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                side: BorderSide(color: isOutOfStock ? Colors.grey : Colors.black, width: 1),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(isOutOfStock 
-                                      ? Icons.info_outline  // 缺貨時使用提示圖標
-                                      : Icons.shopping_cart, // 有庫存時使用購物車圖標
-                                      size: 20),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    isOutOfStock 
-                                        ? '產品已售完'  // 缺貨時顯示"產品已售完"
-                                        : '加入購物車', // 有庫存時顯示"加入購物車"
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
+                              minimumSize: Size(double.infinity, 50),
+                            ),
+                            child: Text(
+                              isOutOfStock ? '產品已售完' : '加入購物車',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
-                        ),
-                        // 收藏按鈕
-                        IconButton(
-                          icon: const Icon(Icons.favorite_border, color: Colors.pink),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已加入收藏')),
-                            );
-                          },
-                        ),
-                        // 分享按鈕
-                        IconButton(
-                          icon: const Icon(Icons.share),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('分享功能待實現')),
-                            );
-                          },
                         ),
                       ],
                     ),
@@ -875,9 +853,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     double roundedPrice = (price * 100).round() / 100;
     // 如果是整數，不顯示小數部分
     if (roundedPrice == roundedPrice.toInt()) {
-      return '\$${roundedPrice.toInt()}';
+      return 'NT\$${roundedPrice.toInt()}';
     }
-    return '\$${roundedPrice.toStringAsFixed(2)}';
+    return 'NT\$${roundedPrice.toStringAsFixed(2)}';
   }
   
   // 格式化選項價格
@@ -888,9 +866,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       double price = double.parse(priceStr);
       // 如果是整數，不顯示小數部分
       if (price == price.toInt()) {
-        return '\$${price.toInt()}';
+        return 'NT\$${price.toInt()}';
       }
-      return '\$${price.toStringAsFixed(2)}';
+      return 'NT\$${price.toStringAsFixed(2)}';
     } catch (e) {
       print('選項價格轉換錯誤: $e');
       return priceStr;
