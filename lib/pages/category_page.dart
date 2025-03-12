@@ -63,6 +63,7 @@ class _CategoryPageState extends State<CategoryPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('分類'),
+        centerTitle: true,
       ),
       body: _isLoading 
         ? const Center(child: CircularProgressIndicator())

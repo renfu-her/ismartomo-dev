@@ -60,6 +60,11 @@ class ApiService {
     return _get('gws_appservice/allCategories');
   }
   
+  // 獲取全域網站設定
+  Future<Map<String, dynamic>> getStoreSettings() async {
+    return _get('gws_store_settings');
+  }
+  
   // 通用 GET 請求方法
   Future<Map<String, dynamic>> _get(String endpoint, {Map<String, dynamic>? extraParams}) async {
     try {

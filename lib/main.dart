@@ -133,6 +133,9 @@ class _HomePageState extends State<HomePage> {
   List<dynamic> _latestProducts = [];
   List<dynamic> _popularProducts = [];
   
+  // 商城設定
+  String? _logoUrl;
+  
   // 頁面列表
   final List<Widget> _pages = [
     const HomeContent(),
@@ -146,6 +149,24 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _fetchHomeData();
+    _fetchStoreSettings();
+  }
+  
+  Future<void> _fetchStoreSettings() async {
+    try {
+      final response = await _apiService.getStoreSettings();
+      
+      setState(() {
+        if (response.containsKey('settings') && 
+            response['settings'] is Map && 
+            response['settings'].containsKey('config_logo')) {
+          _logoUrl = response['settings']['config_logo'];
+        }
+      });
+    } catch (e) {
+      // 處理錯誤，但不顯示錯誤消息，因為這不是關鍵功能
+      print('獲取商城設定失敗: ${e.toString()}');
+    }
   }
   
   Future<void> _fetchHomeData() async {
@@ -200,7 +221,18 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('商城首頁'),
+        title: _logoUrl != null
+            ? Image.network(
+                _logoUrl!.startsWith('http') 
+                    ? _logoUrl! 
+                    : 'https://ismartdemo.com.tw/image/${_logoUrl!}',
+                height: 40,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Text('商城首頁');
+                },
+              )
+            : const Text('商城首頁'),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
