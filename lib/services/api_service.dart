@@ -55,6 +55,11 @@ class ApiService {
     return _get('gws_appsearch', extraParams: {'search': keyword});
   }
   
+  // 獲取所有分類
+  Future<Map<String, dynamic>> getAllCategories() async {
+    return _get('gws_appservice/allCategories');
+  }
+  
   // 通用 GET 請求方法
   Future<Map<String, dynamic>> _get(String endpoint, {Map<String, dynamic>? extraParams}) async {
     try {

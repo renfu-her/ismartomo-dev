@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'services/api_service.dart';
 import 'pages/banner_page.dart';
+import 'pages/category_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -132,6 +133,15 @@ class _HomePageState extends State<HomePage> {
   List<dynamic> _latestProducts = [];
   List<dynamic> _popularProducts = [];
   
+  // 頁面列表
+  final List<Widget> _pages = [
+    const HomeContent(),
+    const CategoryPage(),
+    const Center(child: Text('購物車頁面開發中...')),
+    const Center(child: Text('收藏頁面開發中...')),
+    const Center(child: Text('我的頁面開發中...')),
+  ];
+  
   @override
   void initState() {
     super.initState();
@@ -212,206 +222,13 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : _errorMessage.isNotEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _fetchHomeData,
-                    child: const Text('重試'),
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _fetchHomeData,
-              child: Container(
-                color: Colors.white, // 確保整個首頁背景為白色
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 輪播圖
-                      if (_banners.isNotEmpty)
-                        CarouselSlider(
-                          options: CarouselOptions(
-                            height: 200.0,
-                            aspectRatio: 16/9,
-                            viewportFraction: 1.0,
-                            initialPage: 0,
-                            enableInfiniteScroll: true,
-                            reverse: false,
-                            autoPlay: true,
-                            autoPlayInterval: const Duration(seconds: 3),
-                            autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                            autoPlayCurve: Curves.fastOutSlowIn,
-                            enlargeCenterPage: false,
-                            scrollDirection: Axis.horizontal,
-                          ),
-                          items: _banners.map((banner) {
-                            return Builder(
-                              builder: (BuildContext context) {
-                                return GestureDetector(
-                                  onTap: () {
-                                    if (banner['link'] != null && banner['link'].toString().isNotEmpty) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('打開鏈接: ${banner['link']}')),
-                                      );
-                                    }
-                                  },
-                                  child: Stack(
-                                    children: [
-                                      Image.network(
-                                        banner['image'],
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Center(
-                                            child: Icon(Icons.image_not_supported, size: 50),
-                                          );
-                                        },
-                                      ),
-                                      if (banner['title'] != null && banner['title'].toString().isNotEmpty)
-                                        Positioned(
-                                          bottom: 0,
-                                          left: 0,
-                                          right: 0,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.bottomCenter,
-                                                end: Alignment.topCenter,
-                                                colors: [
-                                                  Colors.black.withOpacity(0.7),
-                                                  Colors.transparent,
-                                                ],
-                                              ),
-                                            ),
-                                            child: Text(
-                                              banner['title'],
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16.0,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // 最新產品
-                      if (_latestProducts.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Center(
-                            child: Text(
-                              '最新產品',
-                              style: TextStyle(
-                                fontSize: TextSizeConfig.calculateTextSize(18),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.65,
-                            crossAxisSpacing: 10.0,
-                            mainAxisSpacing: 10.0,
-                          ),
-                          itemCount: _latestProducts.length > 8 ? 8 : _latestProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = _latestProducts[index];
-                            return ProductCard(
-                              product: product,
-                              onTap: () => _showProductDetails(product),
-                            );
-                          },
-                        ),
-                      ],
-                      
-                      const SizedBox(height: 16),
-                      
-                      // 熱門產品
-                      if (_popularProducts.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          child: Center(
-                            child: Text(
-                              '熱門產品',
-                              style: TextStyle(
-                                fontSize: TextSizeConfig.calculateTextSize(18),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.65,
-                            crossAxisSpacing: 10.0,
-                            mainAxisSpacing: 10.0,
-                          ),
-                          itemCount: _popularProducts.length > 8 ? 8 : _popularProducts.length,
-                          itemBuilder: (context, index) {
-                            final product = _popularProducts[index];
-                            return ProductCard(
-                              product: product,
-                              onTap: () => _showProductDetails(product),
-                            );
-                          },
-                        ),
-                      ],
-                      
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+      body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
-          
-          // 處理底部導航項目點擊
-          if (index != 0) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('您點擊了: ${_getBottomNavItemName(index)}')),
-            );
-          }
         },
         type: BottomNavigationBarType.fixed,
         items: const [
@@ -449,6 +266,308 @@ class _HomePageState extends State<HomePage> {
       case 4: return '我的';
       default: return '';
     }
+  }
+  
+  void _showProductDetails(Map<String, dynamic> product) async {
+    if (product['product_id'] != null) {
+      try {
+        // 顯示加載對話框
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(child: CircularProgressIndicator()),
+        );
+        
+        // 獲取產品詳情
+        final details = await _apiService.getProductDetails(product['product_id'].toString());
+        
+        // 關閉加載對話框
+        Navigator.of(context).pop();
+        
+        // 顯示產品詳情頁面
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ProductDetailPage(productDetails: details),
+            ),
+          );
+        }
+      } catch (e) {
+        // 關閉加載對話框
+        Navigator.of(context).pop();
+        
+        // 顯示錯誤信息
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('無法獲取產品詳情: ${e.toString()}')),
+        );
+      }
+    }
+  }
+}
+
+// 將原來的首頁內容提取為單獨的Widget
+class HomeContent extends StatefulWidget {
+  const HomeContent({super.key});
+
+  @override
+  State<HomeContent> createState() => _HomeContentState();
+}
+
+class _HomeContentState extends State<HomeContent> {
+  final ApiService _apiService = ApiService();
+  bool _isLoading = true;
+  String _errorMessage = '';
+  
+  // 橫幅數據
+  List<Map<String, dynamic>> _banners = [];
+  
+  // 產品數據
+  List<dynamic> _latestProducts = [];
+  List<dynamic> _popularProducts = [];
+  
+  @override
+  void initState() {
+    super.initState();
+    _fetchHomeData();
+  }
+  
+  Future<void> _fetchHomeData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = '';
+    });
+    
+    try {
+      // 並行獲取所有數據
+      final results = await Future.wait([
+        _apiService.getHomeBanners(),
+        _apiService.getLatestProducts(),
+        _apiService.getPopularProducts(),
+      ]);
+      
+      final bannerResponse = results[0];
+      final latestResponse = results[1];
+      final popularResponse = results[2];
+      
+      setState(() {
+        _isLoading = false;
+        
+        // 解析橫幅數據
+        if (bannerResponse.containsKey('home_full_banner') && bannerResponse['home_full_banner'] is List) {
+          _banners = List<Map<String, dynamic>>.from(bannerResponse['home_full_banner']);
+        }
+        
+        // 解析最新產品數據
+        if (latestResponse.containsKey('latest_products')) {
+          _latestProducts = latestResponse['latest_products'];
+        } else if (latestResponse.containsKey('products')) {
+          _latestProducts = latestResponse['products'];
+        }
+        
+        // 解析熱門產品數據
+        if (popularResponse.containsKey('popular_products')) {
+          _popularProducts = popularResponse['popular_products'];
+        } else if (popularResponse.containsKey('products')) {
+          _popularProducts = popularResponse['products'];
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = '獲取數據失敗: ${e.toString()}';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _isLoading 
+      ? const Center(child: CircularProgressIndicator())
+      : _errorMessage.isNotEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _errorMessage,
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _fetchHomeData,
+                  child: const Text('重試'),
+                ),
+              ],
+            ),
+          )
+        : RefreshIndicator(
+            onRefresh: _fetchHomeData,
+            child: Container(
+              color: Colors.white, // 確保整個首頁背景為白色
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 輪播圖
+                    if (_banners.isNotEmpty)
+                      CarouselSlider(
+                        options: CarouselOptions(
+                          height: 200.0,
+                          aspectRatio: 16/9,
+                          viewportFraction: 1.0,
+                          initialPage: 0,
+                          enableInfiniteScroll: true,
+                          reverse: false,
+                          autoPlay: true,
+                          autoPlayInterval: const Duration(seconds: 3),
+                          autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                          autoPlayCurve: Curves.fastOutSlowIn,
+                          enlargeCenterPage: false,
+                          scrollDirection: Axis.horizontal,
+                        ),
+                        items: _banners.map((banner) {
+                          return Builder(
+                            builder: (BuildContext context) {
+                              return GestureDetector(
+                                onTap: () {
+                                  if (banner['link'] != null && banner['link'].toString().isNotEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('打開鏈接: ${banner['link']}')),
+                                    );
+                                  }
+                                },
+                                child: Stack(
+                                  children: [
+                                    Image.network(
+                                      banner['image'],
+                                      fit: BoxFit.cover,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Center(
+                                          child: Icon(Icons.image_not_supported, size: 50),
+                                        );
+                                      },
+                                    ),
+                                    if (banner['title'] != null && banner['title'].toString().isNotEmpty)
+                                      Positioned(
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              begin: Alignment.bottomCenter,
+                                              end: Alignment.topCenter,
+                                              colors: [
+                                                Colors.black.withOpacity(0.7),
+                                                Colors.transparent,
+                                              ],
+                                            ),
+                                          ),
+                                          child: Text(
+                                            banner['title'],
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16.0,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // 最新產品
+                    if (_latestProducts.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Center(
+                          child: Text(
+                            '最新產品',
+                            style: TextStyle(
+                              fontSize: TextSizeConfig.calculateTextSize(18),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.65,
+                          crossAxisSpacing: 10.0,
+                          mainAxisSpacing: 10.0,
+                        ),
+                        itemCount: _latestProducts.length > 8 ? 8 : _latestProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = _latestProducts[index];
+                          return ProductCard(
+                            product: product,
+                            onTap: () => _showProductDetails(product),
+                          );
+                        },
+                      ),
+                    ],
+                    
+                    const SizedBox(height: 16),
+                    
+                    // 熱門產品
+                    if (_popularProducts.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Center(
+                          child: Text(
+                            '熱門產品',
+                            style: TextStyle(
+                              fontSize: TextSizeConfig.calculateTextSize(18),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.65,
+                          crossAxisSpacing: 10.0,
+                          mainAxisSpacing: 10.0,
+                        ),
+                        itemCount: _popularProducts.length > 8 ? 8 : _popularProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = _popularProducts[index];
+                          return ProductCard(
+                            product: product,
+                            onTap: () => _showProductDetails(product),
+                          );
+                        },
+                      ),
+                    ],
+                    
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          );
   }
   
   void _showProductDetails(Map<String, dynamic> product) async {
