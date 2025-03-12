@@ -96,153 +96,156 @@ class _BannerPageState extends State<BannerPage> {
 
     return RefreshIndicator(
       onRefresh: _fetchBanners,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 全幅橫幅輪播
-            if (_homeFullBanners.isNotEmpty) ...[
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  '全幅橫幅',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+      child: Container(
+        color: Colors.white,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 全幅橫幅輪播
+              if (_homeFullBanners.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    '全幅橫幅',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              CarouselSlider(
-                options: CarouselOptions(
-                  height: 200.0,
-                  aspectRatio: 16/9,
-                  viewportFraction: 0.9,
-                  initialPage: 0,
-                  enableInfiniteScroll: true,
-                  reverse: false,
-                  autoPlay: true,
-                  autoPlayInterval: const Duration(seconds: 3),
-                  autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                  autoPlayCurve: Curves.fastOutSlowIn,
-                  enlargeCenterPage: true,
-                  scrollDirection: Axis.horizontal,
-                ),
-                items: _homeFullBanners.map((banner) {
-                  return Builder(
-                    builder: (BuildContext context) {
-                      return GestureDetector(
-                        onTap: () {
-                          if (banner['link'] != null && banner['link'].toString().isNotEmpty) {
-                            // 這裡可以添加打開鏈接的功能
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('打開鏈接: ${banner['link']}')),
-                            );
-                          }
-                        },
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8.0),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                spreadRadius: 1,
-                                blurRadius: 3,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8.0),
-                            child: Stack(
-                              children: [
-                                Image.network(
-                                  banner['image'],
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return const Center(
-                                      child: Icon(Icons.image_not_supported, size: 50),
-                                    );
-                                  },
+                CarouselSlider(
+                  options: CarouselOptions(
+                    height: 200.0,
+                    aspectRatio: 16/9,
+                    viewportFraction: 0.9,
+                    initialPage: 0,
+                    enableInfiniteScroll: true,
+                    reverse: false,
+                    autoPlay: true,
+                    autoPlayInterval: const Duration(seconds: 3),
+                    autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                    autoPlayCurve: Curves.fastOutSlowIn,
+                    enlargeCenterPage: true,
+                    scrollDirection: Axis.horizontal,
+                  ),
+                  items: _homeFullBanners.map((banner) {
+                    return Builder(
+                      builder: (BuildContext context) {
+                        return GestureDetector(
+                          onTap: () {
+                            if (banner['link'] != null && banner['link'].toString().isNotEmpty) {
+                              // 這裡可以添加打開鏈接的功能
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('打開鏈接: ${banner['link']}')),
+                              );
+                            }
+                          },
+                          child: Container(
+                            width: MediaQuery.of(context).size.width,
+                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  spreadRadius: 1,
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 2),
                                 ),
-                                if (banner['title'] != null && banner['title'].toString().isNotEmpty)
-                                  Positioned(
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.bottomCenter,
-                                          end: Alignment.topCenter,
-                                          colors: [
-                                            Colors.black.withOpacity(0.7),
-                                            Colors.transparent,
-                                          ],
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: Stack(
+                                children: [
+                                  Image.network(
+                                    banner['image'],
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Center(
+                                        child: Icon(Icons.image_not_supported, size: 50),
+                                      );
+                                    },
+                                  ),
+                                  if (banner['title'] != null && banner['title'].toString().isNotEmpty)
+                                    Positioned(
+                                      bottom: 0,
+                                      left: 0,
+                                      right: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            colors: [
+                                              Colors.black.withOpacity(0.7),
+                                              Colors.transparent,
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      child: Text(
-                                        banner['title'],
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16.0,
-                                          fontWeight: FontWeight.bold,
+                                        child: Text(
+                                          banner['title'],
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16.0,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                }).toList(),
-              ),
-            ],
-            
-            const SizedBox(height: 20),
-            
-            // 頂部橫幅
-            if (_homeTopBanners.isNotEmpty) ...[
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  '頂部橫幅',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                        );
+                      },
+                    );
+                  }).toList(),
+                ),
+              ],
+              
+              const SizedBox(height: 20),
+              
+              // 頂部橫幅
+              if (_homeTopBanners.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    '頂部橫幅',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              _buildBannerGrid(_homeTopBanners),
-            ],
-            
-            const SizedBox(height: 20),
-            
-            // 頂部右側橫幅
-            if (_homeTopRightBanners.isNotEmpty) ...[
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  '頂部右側橫幅',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                _buildBannerGrid(_homeTopBanners),
+              ],
+              
+              const SizedBox(height: 20),
+              
+              // 頂部右側橫幅
+              if (_homeTopRightBanners.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text(
+                    '頂部右側橫幅',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
-              ),
-              _buildBannerGrid(_homeTopRightBanners),
+                _buildBannerGrid(_homeTopRightBanners),
+              ],
+              
+              const SizedBox(height: 20),
             ],
-            
-            const SizedBox(height: 20),
-          ],
+          ),
         ),
       ),
     );

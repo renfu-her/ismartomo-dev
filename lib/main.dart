@@ -157,165 +157,168 @@ class _HomePageState extends State<HomePage> {
             )
           : RefreshIndicator(
               onRefresh: _fetchHomeData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 輪播圖
-                    if (_banners.isNotEmpty)
-                      CarouselSlider(
-                        options: CarouselOptions(
-                          height: 200.0,
-                          aspectRatio: 16/9,
-                          viewportFraction: 1.0,
-                          initialPage: 0,
-                          enableInfiniteScroll: true,
-                          reverse: false,
-                          autoPlay: true,
-                          autoPlayInterval: const Duration(seconds: 3),
-                          autoPlayAnimationDuration: const Duration(milliseconds: 800),
-                          autoPlayCurve: Curves.fastOutSlowIn,
-                          enlargeCenterPage: false,
-                          scrollDirection: Axis.horizontal,
-                        ),
-                        items: _banners.map((banner) {
-                          return Builder(
-                            builder: (BuildContext context) {
-                              return GestureDetector(
-                                onTap: () {
-                                  if (banner['link'] != null && banner['link'].toString().isNotEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('打開鏈接: ${banner['link']}')),
-                                    );
-                                  }
-                                },
-                                child: Stack(
-                                  children: [
-                                    Image.network(
-                                      banner['image'],
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return const Center(
-                                          child: Icon(Icons.image_not_supported, size: 50),
-                                        );
-                                      },
-                                    ),
-                                    if (banner['title'] != null && banner['title'].toString().isNotEmpty)
-                                      Positioned(
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                                          decoration: BoxDecoration(
-                                            gradient: LinearGradient(
-                                              begin: Alignment.bottomCenter,
-                                              end: Alignment.topCenter,
-                                              colors: [
-                                                Colors.black.withOpacity(0.7),
-                                                Colors.transparent,
-                                              ],
+              child: Container(
+                color: Colors.white, // 確保整個首頁背景為白色
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 輪播圖
+                      if (_banners.isNotEmpty)
+                        CarouselSlider(
+                          options: CarouselOptions(
+                            height: 200.0,
+                            aspectRatio: 16/9,
+                            viewportFraction: 1.0,
+                            initialPage: 0,
+                            enableInfiniteScroll: true,
+                            reverse: false,
+                            autoPlay: true,
+                            autoPlayInterval: const Duration(seconds: 3),
+                            autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                            autoPlayCurve: Curves.fastOutSlowIn,
+                            enlargeCenterPage: false,
+                            scrollDirection: Axis.horizontal,
+                          ),
+                          items: _banners.map((banner) {
+                            return Builder(
+                              builder: (BuildContext context) {
+                                return GestureDetector(
+                                  onTap: () {
+                                    if (banner['link'] != null && banner['link'].toString().isNotEmpty) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('打開鏈接: ${banner['link']}')),
+                                      );
+                                    }
+                                  },
+                                  child: Stack(
+                                    children: [
+                                      Image.network(
+                                        banner['image'],
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Center(
+                                            child: Icon(Icons.image_not_supported, size: 50),
+                                          );
+                                        },
+                                      ),
+                                      if (banner['title'] != null && banner['title'].toString().isNotEmpty)
+                                        Positioned(
+                                          bottom: 0,
+                                          left: 0,
+                                          right: 0,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                begin: Alignment.bottomCenter,
+                                                end: Alignment.topCenter,
+                                                colors: [
+                                                  Colors.black.withOpacity(0.7),
+                                                  Colors.transparent,
+                                                ],
+                                              ),
                                             ),
-                                          ),
-                                          child: Text(
-                                            banner['title'],
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16.0,
-                                              fontWeight: FontWeight.bold,
+                                            child: Text(
+                                              banner['title'],
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16.0,
+                                                fontWeight: FontWeight.bold,
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // 最新產品
-                    if (_latestProducts.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Center(
-                          child: Text(
-                            '最新產品',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // 最新產品
+                      if (_latestProducts.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Center(
+                            child: Text(
+                              '最新產品',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.7,
-                          crossAxisSpacing: 10.0,
-                          mainAxisSpacing: 10.0,
+                        const SizedBox(height: 8),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.7,
+                            crossAxisSpacing: 10.0,
+                            mainAxisSpacing: 10.0,
+                          ),
+                          itemCount: _latestProducts.length > 8 ? 8 : _latestProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = _latestProducts[index];
+                            return ProductCard(
+                              product: product,
+                              onTap: () => _showProductDetails(product),
+                            );
+                          },
                         ),
-                        itemCount: _latestProducts.length > 8 ? 8 : _latestProducts.length,
-                        itemBuilder: (context, index) {
-                          final product = _latestProducts[index];
-                          return ProductCard(
-                            product: product,
-                            onTap: () => _showProductDetails(product),
-                          );
-                        },
-                      ),
-                    ],
-                    
-                    const SizedBox(height: 16),
-                    
-                    // 熱門產品
-                    if (_popularProducts.isNotEmpty) ...[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Center(
-                          child: Text(
-                            '熱門產品',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                      ],
+                      
+                      const SizedBox(height: 16),
+                      
+                      // 熱門產品
+                      if (_popularProducts.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Center(
+                            child: Text(
+                              '熱門產品',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.7,
-                          crossAxisSpacing: 10.0,
-                          mainAxisSpacing: 10.0,
+                        const SizedBox(height: 8),
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            childAspectRatio: 0.7,
+                            crossAxisSpacing: 10.0,
+                            mainAxisSpacing: 10.0,
+                          ),
+                          itemCount: _popularProducts.length > 8 ? 8 : _popularProducts.length,
+                          itemBuilder: (context, index) {
+                            final product = _popularProducts[index];
+                            return ProductCard(
+                              product: product,
+                              onTap: () => _showProductDetails(product),
+                            );
+                          },
                         ),
-                        itemCount: _popularProducts.length > 8 ? 8 : _popularProducts.length,
-                        itemBuilder: (context, index) {
-                          final product = _popularProducts[index];
-                          return ProductCard(
-                            product: product,
-                            onTap: () => _showProductDetails(product),
-                          );
-                        },
-                      ),
+                      ],
+                      
+                      const SizedBox(height: 20),
                     ],
-                    
-                    const SizedBox(height: 20),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -566,7 +569,8 @@ class _ProductListPageState extends State<ProductListPage> {
     return Column(
       children: [
         if (_statusMessage.isNotEmpty)
-          Padding(
+          Container(
+            color: Colors.white, // 確保狀態消息區域背景為白色
             padding: const EdgeInsets.all(8.0),
             child: Text(
               _statusMessage,
@@ -578,24 +582,27 @@ class _ProductListPageState extends State<ProductListPage> {
             ),
           ),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: _fetchProducts,
-            child: GridView.builder(
-              padding: const EdgeInsets.all(8.0),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 10.0,
-                mainAxisSpacing: 10.0,
+          child: Container(
+            color: Colors.white, // 確保列表區域背景為白色
+            child: RefreshIndicator(
+              onRefresh: _fetchProducts,
+              child: GridView.builder(
+                padding: const EdgeInsets.all(8.0),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 10.0,
+                  mainAxisSpacing: 10.0,
+                ),
+                itemCount: _products.length,
+                itemBuilder: (context, index) {
+                  final product = _products[index];
+                  return ProductCard(
+                    product: product,
+                    onTap: () => _showProductDetails(product),
+                  );
+                },
               ),
-              itemCount: _products.length,
-              itemBuilder: (context, index) {
-                final product = _products[index];
-                return ProductCard(
-                  product: product,
-                  onTap: () => _showProductDetails(product),
-                );
-              },
             ),
           ),
         ),
@@ -657,6 +664,7 @@ class ProductCard extends StatelessWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         elevation: 2.0,
+        color: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
@@ -665,7 +673,7 @@ class ProductCard extends StatelessWidget {
           children: [
             if (product['thumb'] != null)
               AspectRatio(
-                aspectRatio: 1.0, // 正方形比例
+                aspectRatio: 1.0,
                 child: Container(
                   width: double.infinity,
                   color: Colors.white,
@@ -676,7 +684,7 @@ class ProductCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return const Center(
-                        child: Icon(Icons.image_not_supported, size: 50),
+                        child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
                       );
                     },
                   ),
@@ -783,9 +791,10 @@ class ProductDetailPage extends StatelessWidget {
               children: [
                 // 產品圖片
                 if (product['thumb'] != null)
-                  SizedBox(
+                  Container(
                     width: double.infinity,
                     height: 250,
+                    color: Colors.white, // 確保圖片容器背景為白色
                     child: Image.network(
                       product['thumb'].startsWith('http') 
                           ? product['thumb'] 
@@ -793,14 +802,15 @@ class ProductDetailPage extends StatelessWidget {
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return const Center(
-                          child: Icon(Icons.image_not_supported, size: 80),
+                          child: Icon(Icons.image_not_supported, size: 80, color: Colors.grey),
                         );
                       },
                     ),
                   ),
                 
                 // 產品信息
-                Padding(
+                Container(
+                  color: Colors.white, // 確保產品信息區域背景為白色
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
