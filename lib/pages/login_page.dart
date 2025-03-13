@@ -258,62 +258,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-              const SizedBox(height: 16),
-              
-              // 其他登入選項
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      '或使用以下方式登入',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // 社交媒體登入按鈕
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildSocialLoginButton(
-                    icon: Icons.facebook,
-                    color: Colors.blue,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Facebook登入功能待實現')),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 16),
-                  _buildSocialLoginButton(
-                    icon: Icons.g_mobiledata,
-                    color: Colors.red,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Google登入功能待實現')),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 16),
-                  _buildSocialLoginButton(
-                    icon: Icons.apple,
-                    color: Colors.black,
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Apple登入功能待實現')),
-                      );
-                    },
-                  ),
-                ],
-              ),
               const SizedBox(height: 24),
               
               // 註冊提示
@@ -343,29 +287,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildSocialLoginButton({
-    required IconData icon,
-    required Color color,
-    required VoidCallback onPressed,
-  }) {
-    return InkWell(
-      onTap: onPressed,
-      child: Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Icon(
-          icon,
-          color: color,
-          size: 30,
         ),
       ),
     );
