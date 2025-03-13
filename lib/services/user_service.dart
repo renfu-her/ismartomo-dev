@@ -26,6 +26,12 @@ class UserService extends ChangeNotifier {
   Future<void> _initLoginStatus() async {
     try {
       _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+      
+      // 如果已登入，則獲取收藏列表
+      if (_isLoggedIn) {
+        fetchWishlist();
+      }
+      
       notifyListeners();
     } catch (e) {
       debugPrint('初始化登入狀態錯誤: ${e.toString()}');
@@ -78,6 +84,10 @@ class UserService extends ChangeNotifier {
         final success = await _fetchUserData(email);
         if (success) {
           _isLoggedIn = true;
+          
+          // 獲取收藏列表
+          await fetchWishlist();
+          
           notifyListeners();
         }
         return success;
@@ -182,6 +192,152 @@ class UserService extends ChangeNotifier {
       return true;
     } catch (e) {
       debugPrint('登出錯誤: ${e.toString()}');
+      return false;
+    }
+  }
+  
+  // 收藏列表
+  List<String> _wishlist = [];
+  
+  // 獲取收藏列表
+  List<String> get wishlist => _wishlist;
+  
+  // 獲取用戶收藏列表
+  Future<List<String>> fetchWishlist() async {
+    try {
+      if (!_isLoggedIn) {
+        return [];
+      }
+      
+      // 獲取用戶ID
+      final userData = await getUserData();
+      final customerId = userData['customer_id'];
+      
+      if (customerId == null || customerId.isEmpty) {
+        return [];
+      }
+      
+      // 使用 API 獲取收藏列表
+      final response = await _apiService.getCustomerWishlist(customerId);
+      
+      if (response.containsKey('customer_wishlist') && 
+          response['customer_wishlist'] is List) {
+        
+        // 解析收藏列表
+        final wishlistItems = List<Map<String, dynamic>>.from(response['customer_wishlist']);
+        
+        // 提取產品ID
+        _wishlist = wishlistItems.map((item) => item['product_id'].toString()).toList();
+        
+        // 通知監聽器
+        notifyListeners();
+        
+        return _wishlist;
+      }
+      
+      return [];
+    } catch (e) {
+      debugPrint('獲取收藏列表錯誤: ${e.toString()}');
+      return [];
+    }
+  }
+  
+  // 檢查產品是否已收藏
+  bool isProductInWishlist(String productId) {
+    return _wishlist.contains(productId);
+  }
+  
+  // 檢查產品是否已收藏（別名）
+  bool isProductInFavorites(String productId) {
+    return isProductInWishlist(productId);
+  }
+  
+  // 檢查產品是否已收藏（別名）
+  bool isFavorite(String productId) {
+    return isProductInWishlist(productId);
+  }
+  
+  // 添加產品到收藏列表（別名）
+  Future<bool> addFavorite(String productId) async {
+    try {
+      if (!_isLoggedIn) {
+        return false;
+      }
+      
+      // 如果產品已經在收藏列表中，則不再添加
+      if (_wishlist.contains(productId)) {
+        return true;
+      }
+      
+      // 獲取用戶ID
+      final userData = await getUserData();
+      final customerId = userData['customer_id'];
+      
+      if (customerId == null || customerId.isEmpty) {
+        return false;
+      }
+      
+      // 使用 API 添加到收藏列表
+      try {
+        await _apiService.addToWishlist(customerId, productId);
+      } catch (e) {
+        debugPrint('API 添加收藏失敗: ${e.toString()}');
+      }
+      
+      // 添加到本地收藏列表
+      _wishlist.add(productId);
+      
+      // 通知監聽器
+      notifyListeners();
+      
+      return true;
+    } catch (e) {
+      debugPrint('添加到收藏列表錯誤: ${e.toString()}');
+      return false;
+    }
+  }
+  
+  // 從收藏列表中移除產品（別名）
+  Future<bool> removeFavorite(String productId) async {
+    return removeFromFavorites(productId);
+  }
+  
+  // 從收藏列表中移除產品
+  Future<bool> removeFromFavorites(String productId) async {
+    try {
+      if (!_isLoggedIn) {
+        return false;
+      }
+      
+      // 如果產品不在收藏列表中，則不需要移除
+      if (!_wishlist.contains(productId)) {
+        return true;
+      }
+      
+      // 獲取用戶ID
+      final userData = await getUserData();
+      final customerId = userData['customer_id'];
+      
+      if (customerId == null || customerId.isEmpty) {
+        return false;
+      }
+      
+      // 使用 API 從收藏列表中移除
+      try {
+        await _apiService.removeFromWishlist(customerId, productId);
+      } catch (e) {
+        debugPrint('API 移除收藏失敗: ${e.toString()}');
+      }
+      
+      // 從本地收藏列表中移除
+      _wishlist.remove(productId);
+      
+      // 通知監聽器
+      notifyListeners();
+      
+      return true;
+    } catch (e) {
+      debugPrint('從收藏列表中移除錯誤: ${e.toString()}');
       return false;
     }
   }

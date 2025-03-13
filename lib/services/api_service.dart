@@ -326,4 +326,25 @@ class ApiService {
       throw Exception('API 請求錯誤: ${e.toString()}');
     }
   }
+  
+  // 獲取用戶收藏列表
+  Future<Map<String, dynamic>> getCustomerWishlist(String customerId) async {
+    return _get('gws_customer_wishlist', extraParams: {'customer_id': customerId});
+  }
+  
+  // 添加產品到收藏列表
+  Future<Map<String, dynamic>> addToWishlist(String customerId, String productId) async {
+    return _get('gws_customer_wishlist/add', extraParams: {
+      'customer_id': customerId,
+      'product_id': productId
+    });
+  }
+  
+  // 從收藏列表中移除產品
+  Future<Map<String, dynamic>> removeFromWishlist(String customerId, String productId) async {
+    return _get('gws_customer_wishlist/remove', extraParams: {
+      'customer_id': customerId,
+      'product_id': productId
+    });
+  }
 } 

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../services/api_service.dart';
+import '../services/user_service.dart';
+import 'package:provider/provider.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Map<String, dynamic> productDetails;
@@ -216,11 +218,27 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       appBar: AppBar(
         title: const Text('產品明細'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Colors.red),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('已加入收藏')),
+          Consumer<UserService>(
+            builder: (context, userService, child) {
+              bool isFavorite = userService.isFavorite(_productData['product_id']);
+              return IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color: Colors.red,
+                ),
+                onPressed: () {
+                  if (isFavorite) {
+                    userService.removeFavorite(_productData['product_id']);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('已從收藏中移除')),
+                    );
+                  } else {
+                    userService.addFavorite(_productData['product_id']);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('已加入收藏')),
+                    );
+                  }
+                },
               );
             },
           ),

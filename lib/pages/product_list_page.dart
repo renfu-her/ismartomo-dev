@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
+import '../services/user_service.dart';
 
 // 排序選項枚舉
 enum SortOption {
@@ -353,13 +355,47 @@ class _ProductListPageState extends State<ProductListPage> {
                       // 愛心按鈕
                       Expanded(
                         flex: 2, // 2/10 = 20%
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const FaIcon(FontAwesomeIcons.heart, size: 18),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('已加入收藏')),
+                        child: Consumer<UserService>(
+                          builder: (context, userService, child) {
+                            final productId = product['product_id'].toString();
+                            final isFavorite = userService.isFavorite(productId);
+                            
+                            return IconButton(
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              icon: FaIcon(
+                                isFavorite ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                                size: 18,
+                                color: Colors.red,
+                              ),
+                              onPressed: () {
+                                if (userService.isLoggedIn) {
+                                  if (isFavorite) {
+                                    userService.removeFavorite(productId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('已從收藏中移除')),
+                                    );
+                                  } else {
+                                    userService.addFavorite(productId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('已加入收藏')),
+                                    );
+                                  }
+                                } else {
+                                  // 提示用戶登入
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: const Text('請先登入以使用收藏功能'),
+                                      action: SnackBarAction(
+                                        label: '登入',
+                                        onPressed: () {
+                                          Navigator.of(context).pushNamed('/login');
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
                             );
                           },
                         ),
