@@ -42,30 +42,23 @@ class _RegisterPageState extends State<RegisterPage> {
   void initState() {
     super.initState();
     _fetchZones();
-    print('註冊頁面初始化');
   }
 
   // 獲取區域列表
   Future<void> _fetchZones() async {
     try {
-      print('開始獲取區域列表');
       final response = await _apiService.getZones('206'); // 台灣的 country_id 是 206
-      print('區域列表響應: $response');
       
       setState(() {
         if (response.containsKey('zones') && response['zones'] is List) {
           _zones = List<Map<String, dynamic>>.from(response['zones']);
-          print('獲取到 ${_zones.length} 個區域');
           if (_zones.isNotEmpty) {
             _selectedZoneId = _zones[0]['zone_id'];
-            print('選擇的區域 ID: $_selectedZoneId, 名稱: ${_zones[0]['name']}');
           }
-        } else {
-          print('無法獲取區域列表: ${response.toString()}');
         }
       });
     } catch (e) {
-      print('獲取區域列表錯誤: ${e.toString()}');
+      // 錯誤處理
     }
   }
 
@@ -122,8 +115,6 @@ class _RegisterPageState extends State<RegisterPage> {
         'company': '', // 公司欄位，必須傳遞空白
       };
       
-      print('註冊數據: $userData');
-      
       // 調用註冊 API
       final response = await _apiService.register(userData);
       
@@ -152,7 +143,6 @@ class _RegisterPageState extends State<RegisterPage> {
       // 檢查註冊是否成功
       if (response.containsKey('success') && response['success'] == true) {
         // 直接成功標誌
-        print('註冊成功: 直接成功標誌');
         return true;
       } else if (response.containsKey('raw_response')) {
         // 原始響應，檢查是否包含成功信息
@@ -161,7 +151,6 @@ class _RegisterPageState extends State<RegisterPage> {
             rawResponse.contains('成功') || 
             !rawResponse.contains('error') && 
             !rawResponse.contains('失敗')) {
-          print('註冊可能成功: 原始響應 - $rawResponse');
           return true;
         } else {
           setState(() {
@@ -174,7 +163,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 response['message'].isNotEmpty) {
         
         final message = response['message'][0];
-        print('註冊消息: $message');
         
         if (message.containsKey('msg_status') && message['msg_status'] == false) {
           // 註冊失敗
@@ -184,30 +172,23 @@ class _RegisterPageState extends State<RegisterPage> {
           return false;
         } else if (message.containsKey('msg_status') && message['msg_status'] == true) {
           // 註冊成功 - 明確的成功狀態
-          print('註冊成功: ${message['msg']}');
           return true;
         } else if (message.containsKey('msg') && 
                   (message['msg'].toString().contains('success') || 
                    message['msg'].toString().contains('成功') || 
                    message['msg'].toString().contains('Customer data updated successfully'))) {
           // 註冊成功 - 根據訊息內容判斷
-          print('註冊成功: ${message['msg']}');
           return true;
         } else {
           // 其他情況，嘗試判斷是否成功
-          print('嘗試判斷註冊結果: $message');
           return message.containsKey('msg') && !message['msg'].toString().contains('error');
         }
       } else {
         // 無法解析響應，但沒有明確的錯誤，視為成功
-        print('無法解析響應，但沒有明確的錯誤，視為成功: ${response.toString()}');
         return true;
       }
     } catch (e) {
       // 其他異常處理
-      print('註冊其他異常: ${e.toString()}');
-      print('異常堆棧: ${StackTrace.current}');
-      
       setState(() {
         _isLoading = false;
         _errorMessage = '發生錯誤: ${e.toString()}';
@@ -602,7 +583,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 onChanged: (value) {
                   setState(() {
                     _selectedZoneId = value;
-                    print('選擇的區域已更改為: $value');
                   });
                 },
                 validator: (value) {

@@ -31,7 +31,7 @@ class ApiService {
       requestBody: true,
       responseBody: true,
       logPrint: (object) {
-        print(object.toString());
+        // 移除 print 語句
       },
     ));
   }
@@ -41,7 +41,6 @@ class ApiService {
     try {
       // 使用 _get 方法來保持一致性
       final loginUrl = 'gws_appcustomer/login';
-      print('登入 URL: ${_baseUrl}/$loginUrl&api_key=$_apiKey');
       
       final response = await _dio.post(
         '${_baseUrl}/$loginUrl&api_key=$_apiKey',
@@ -58,9 +57,6 @@ class ApiService {
         ),
       );
       
-      print('登入響應狀態碼: ${response.statusCode}');
-      print('登入響應數據: ${response.data}');
-      
       if (response.statusCode == 200) {
         if (response.data is Map) {
           return response.data;
@@ -71,7 +67,6 @@ class ApiService {
         throw Exception('請求失敗: ${response.statusCode}');
       }
     } catch (e) {
-      print('登入錯誤: ${e.toString()}');
       throw Exception('API 請求錯誤: ${e.toString()}');
     }
   }
@@ -82,7 +77,6 @@ class ApiService {
       // 使用 _get 方法來保持一致性
       return _get('gws_appcustomer', extraParams: {'email': email});
     } catch (e) {
-      print('獲取用戶資料錯誤: ${e.toString()}');
       throw Exception('API 請求錯誤: ${e.toString()}');
     }
   }
@@ -144,8 +138,6 @@ class ApiService {
       // 直接構建完整的 URL
       String url = '${_baseUrl}/gws_appproduct&api_key=$_apiKey&product_id=$productId';
       
-      print('獲取產品詳情，URL: $url');
-      
       // 發送請求
       final response = await _dio.get(url);
       
@@ -183,10 +175,8 @@ class ApiService {
   Future<Map<String, dynamic>> getZones(String countryId) async {
     try {
       final response = await _get('gws_zone', extraParams: {'country_id': countryId});
-      print('獲取區域列表響應: ${response.toString()}');
       return response;
     } catch (e) {
-      print('獲取區域列表錯誤: ${e.toString()}');
       throw Exception('API 請求錯誤: ${e.toString()}');
     }
   }
@@ -198,14 +188,6 @@ class ApiService {
       final registerUrl = 'gws_customer/add';
       final url = '${_baseUrl}/$registerUrl&api_key=$_apiKey';
       
-      print('註冊 URL: $url');
-      
-      // 打印原始數據
-      print('原始註冊數據:');
-      userData.forEach((key, value) {
-        print('$key: $value');
-      });
-      
       // 確保包含必要參數
       if (!userData.containsKey('company')) {
         userData['company'] = '';
@@ -213,12 +195,6 @@ class ApiService {
       
       // 創建 FormData
       final formData = FormData.fromMap(userData);
-      
-      // 打印 FormData 字段
-      print('FormData 字段:');
-      formData.fields.forEach((field) {
-        print('${field.key}: ${field.value}');
-      });
       
       // 設置請求選項 - 根據 Thunder Client 的響應頭信息設置
       final options = Options(
@@ -233,8 +209,6 @@ class ApiService {
         },
       );
       
-      print('使用 FormData 發送請求');
-      
       // 直接使用 POST 方法發送請求
       final response = await _dio.post(
         url,
@@ -242,26 +216,14 @@ class ApiService {
         options: options,
       );
 
-      print('註冊響應狀態碼: ${response.statusCode}');
-      print('註冊響應頭: ${response.headers}');
-      
-      if (response.data != null) {
-        print('註冊響應數據類型: ${response.data.runtimeType}');
-        print('註冊響應數據: ${response.data}');
-      } else {
-        print('註冊響應數據為空');
-      }
-      
       if (response.statusCode == 200) {
         if (response.data is Map) {
           return response.data;
         } else if (response.data is String) {
           // 嘗試解析字符串響應為 JSON
           final String responseStr = response.data.toString();
-          print('響應是字符串，長度: ${responseStr.length}');
           
           if (responseStr.isEmpty) {
-            print('響應是空字符串，視為成功');
             return {'success': true, 'message': [{'msg': '註冊成功', 'msg_status': true}]};
           }
           
@@ -272,8 +234,6 @@ class ApiService {
                 return Map<String, dynamic>.from(jsonData);
               }
             } else {
-              print('響應不是 JSON 格式: $responseStr');
-              
               // 檢查是否包含成功信息
               if (responseStr.toLowerCase().contains('success') || 
                   responseStr.contains('成功') || 
@@ -282,15 +242,13 @@ class ApiService {
               }
             }
           } catch (e) {
-            print('解析響應數據錯誤: ${e.toString()}');
-            print('原始響應: $responseStr');
+            // 解析錯誤處理
           }
           
           // 如果無法解析為 JSON，則返回一個包含原始響應的 Map
           return {'raw_response': responseStr, 'success': true};
         } else if (response.data == null) {
           // 空響應，視為成功
-          print('響應為空，視為成功');
           return {'success': true, 'message': [{'msg': '註冊成功', 'msg_status': true}]};
         } else {
           // 返回一個空的成功響應
@@ -300,36 +258,6 @@ class ApiService {
         return {'error': true, 'message': [{'msg': '請求失敗: ${response.statusCode}', 'msg_status': false}]};
       }
     } on DioException catch (e) {
-      print('*** DioException 詳細信息 ***');
-      print('請求 URL: ${e.requestOptions.uri}');
-      print('請求方法: ${e.requestOptions.method}');
-      print('請求頭: ${e.requestOptions.headers}');
-      print('請求數據: ${e.requestOptions.data}');
-      print('錯誤類型: ${e.type}');
-      print('錯誤信息: ${e.message}');
-      
-      if (e.response != null) {
-        print('錯誤響應狀態碼: ${e.response?.statusCode}');
-        print('錯誤響應頭: ${e.response?.headers}');
-        
-        if (e.response?.data != null) {
-          print('錯誤響應數據: ${e.response?.data}');
-          
-          // 嘗試處理響應數據
-          if (e.response?.data is String) {
-            final String responseStr = e.response?.data.toString() ?? '';
-            if (responseStr.isEmpty) {
-              print('錯誤響應是空字符串，可能是成功');
-              return {'success': true, 'message': [{'msg': '註冊可能成功', 'msg_status': true}]};
-            }
-          }
-        } else {
-          print('無錯誤響應數據');
-        }
-      } else {
-        print('無響應數據');
-      }
-      
       // 返回一個錯誤響應而不是拋出異常
       String errorMsg = e.message ?? '未知錯誤';
       if (e.type == DioExceptionType.connectionTimeout) {
@@ -351,9 +279,6 @@ class ApiService {
         'message': [{'msg': errorMsg, 'msg_status': false}]
       };
     } catch (e) {
-      print('註冊錯誤: ${e.toString()}');
-      print('錯誤堆棧: ${StackTrace.current}');
-      
       // 返回一個錯誤響應而不是拋出異常
       return <String, dynamic>{
         'error': true,
@@ -383,8 +308,6 @@ class ApiService {
           url += '&$key=$value';
         });
       }
-      
-      print('請求 URL: $url'); // 添加日誌以便調試
       
       // 發送請求
       final response = await _dio.get(url);
