@@ -175,6 +175,36 @@ class UserService extends ChangeNotifier {
     }
   }
   
+  // 從 SharedPreferences 重新讀取用戶資料
+  Future<void> refreshUserData() async {
+    try {
+      // 檢查是否已登入
+      if (!_isLoggedIn) {
+        return;
+      }
+      
+      // 從 SharedPreferences 讀取最新的用戶資料
+      final userData = await getUserData();
+      
+      // 通知監聽器數據已更新
+      notifyListeners();
+      
+      return;
+    } catch (e) {
+      debugPrint('重新讀取用戶資料錯誤: ${e.toString()}');
+    }
+  }
+  
+  // 獲取用戶 ID
+  Future<String?> getUserId() async {
+    try {
+      return prefs.getString('user_customer_id');
+    } catch (e) {
+      debugPrint('獲取用戶 ID 錯誤: ${e.toString()}');
+      return null;
+    }
+  }
+  
   // 登出功能
   Future<bool> logout() async {
     try {

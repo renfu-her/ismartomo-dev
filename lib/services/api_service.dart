@@ -348,13 +348,98 @@ class ApiService {
     });
   }
   
-  // 獲取所有資訊頁面
-  Future<Map<String, dynamic>> getAllInformation() async {
-    return _get('gws_information');
+  // 獲取資訊詳情
+  Future<Map<String, dynamic>> getInformationById(String informationId) async {
+    try {
+      final response = await _get('gws_information&information_id=$informationId');
+      return response;
+    } catch (e) {
+      rethrow;
+    }
   }
   
-  // 獲取特定資訊頁面
-  Future<Map<String, dynamic>> getInformationById(String informationId) async {
-    return _get('gws_information', extraParams: {'information_id': informationId});
+  // 獲取所有資訊
+  Future<Map<String, dynamic>> getAllInformation() async {
+    try {
+      final response = await _get('gws_information');
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+  
+  // 獲取會員資料
+  Future<Map<String, dynamic>> getCustomerProfile(String customerId) async {
+    try {
+      final response = await _get('gws_customer&customer_id=$customerId');
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+  
+  // 更新會員資料
+  Future<Map<String, dynamic>> updateCustomerProfile(String customerId, Map<String, dynamic> data) async {
+    try {
+      // 構建 URL
+      final url = '${_baseUrl}/gws_customer/edit&api_key=$_apiKey&customer_id=$customerId';
+      
+      // 創建 FormData
+      final formData = FormData.fromMap(data);
+      
+      // 發送請求
+      final response = await _dio.post(
+        url,
+        data: formData,
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) {
+            return status != null && status < 500;
+          },
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else if (response.data is String) {
+          // 嘗試解析字符串響應為 JSON
+          final String responseStr = response.data.toString();
+          
+          if (responseStr.isEmpty) {
+            return {'success': true, 'message': [{'msg': '更新成功', 'msg_status': true}]};
+          }
+          
+          try {
+            if (responseStr.trim().startsWith('{') || responseStr.trim().startsWith('[')) {
+              final jsonData = jsonDecode(responseStr);
+              if (jsonData is Map) {
+                return Map<String, dynamic>.from(jsonData);
+              }
+            } else {
+              // 檢查是否包含成功信息
+              if (responseStr.toLowerCase().contains('success') || 
+                  responseStr.contains('成功') || 
+                  !responseStr.toLowerCase().contains('error')) {
+                return {'success': true, 'message': [{'msg': responseStr, 'msg_status': true}]};
+              }
+            }
+          } catch (e) {
+            // 解析錯誤處理
+          }
+          
+          // 如果無法解析為 JSON，則返回一個包含原始響應的 Map
+          return {'raw_response': responseStr, 'success': true};
+        } else {
+          // 返回一個空的成功響應
+          return {'success': true, 'message': [{'msg': '更新成功', 'msg_status': true}]};
+        }
+      } else {
+        return {'error': true, 'message': [{'msg': '請求失敗: ${response.statusCode}', 'msg_status': false}]};
+      }
+    } catch (e) {
+      return {'error': true, 'message': [{'msg': '發生錯誤: ${e.toString()}', 'msg_status': false}]};
+    }
   }
 } 

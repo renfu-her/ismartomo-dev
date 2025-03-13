@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'login_page.dart';
 import 'register_page.dart';
 import 'information_page.dart';
+import 'customer_profile_page.dart';
 import '../services/api_service.dart';
 import '../services/user_service.dart';
 
@@ -22,16 +23,25 @@ class _ProfilePageState extends State<ProfilePage> {
   
   // 會員功能項目列表
   final List<Map<String, dynamic>> _memberFeatures = [
+    {'title': '會員資料', 'icon': FontAwesomeIcons.userGear, 'color': Colors.blue},
     {'title': '我的訂單', 'icon': FontAwesomeIcons.fileInvoice, 'color': Colors.orange},
-    {'title': '我的優惠券', 'icon': FontAwesomeIcons.ticket, 'color': Colors.red},
     {'title': '收貨地址', 'icon': FontAwesomeIcons.locationDot, 'color': Colors.green},
-    {'title': '我的收藏', 'icon': FontAwesomeIcons.heart, 'color': Colors.pink},
   ];
 
   @override
   void initState() {
     super.initState();
     _fetchInformationList();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 每次頁面顯示時重新讀取用戶資料
+    final userService = Provider.of<UserService>(context, listen: false);
+    if (userService.isLoggedIn) {
+      userService.refreshUserData();
+    }
   }
 
   Future<void> _fetchInformationList() async {
@@ -98,7 +108,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   _buildUserInfoSection(userService),
                 
                 // 會員功能區
-                if (userService.isLoggedIn) _buildMemberFeatures(),
+                _buildMemberFeatures(),
                 
                 // 分隔線
                 const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
@@ -316,7 +326,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '會員等級: 普通會員',
+                      userData['email'] != null && userData['email']!.isNotEmpty
+                          ? userData['email']!
+                          : '會員等級: 普通會員',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withOpacity(0.8),
@@ -390,9 +402,29 @@ class _ProfilePageState extends State<ProfilePage> {
               return Expanded(
                 child: InkWell(
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('您點擊了: ${feature['title']}')),
-                    );
+                    // 根據不同的功能項目執行不同的操作
+                    switch (feature['title']) {
+                      case '會員資料':
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const CustomerProfilePage()),
+                        );
+                        break;
+                      case '我的訂單':
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('訂單功能待實現')),
+                        );
+                        break;
+                      case '收貨地址':
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('地址功能待實現')),
+                        );
+                        break;
+                      default:
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('您點擊了: ${feature['title']}')),
+                        );
+                    }
                   },
                   child: Column(
                     children: [
