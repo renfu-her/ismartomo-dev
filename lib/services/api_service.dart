@@ -178,6 +178,54 @@ class ApiService {
     return _get('gws_store_settings');
   }
   
+  // 獲取區域列表
+  Future<Map<String, dynamic>> getZones(String countryId) async {
+    try {
+      final response = await _get('gws_zone', extraParams: {'country_id': countryId});
+      print('獲取區域列表響應: ${response.toString()}');
+      return response;
+    } catch (e) {
+      print('獲取區域列表錯誤: ${e.toString()}');
+      throw Exception('API 請求錯誤: ${e.toString()}');
+    }
+  }
+  
+  // 用戶註冊
+  Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
+    try {
+      final registerUrl = 'gws_customer/add';
+      print('註冊 URL: ${_baseUrl}/$registerUrl&api_key=$_apiKey');
+      
+      final response = await _dio.post(
+        '${_baseUrl}/$registerUrl&api_key=$_apiKey',
+        data: FormData.fromMap(userData),
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) {
+            return status != null && status < 500;
+          },
+        ),
+      );
+      
+      print('註冊響應狀態碼: ${response.statusCode}');
+      print('註冊響應數據: ${response.data}');
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else {
+          throw Exception('返回數據格式錯誤');
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('註冊錯誤: ${e.toString()}');
+      throw Exception('API 請求錯誤: ${e.toString()}');
+    }
+  }
+  
   // 通用 GET 請求方法
   Future<Map<String, dynamic>> _get(String endpoint, {Map<String, dynamic>? extraParams}) async {
     try {
