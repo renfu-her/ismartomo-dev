@@ -323,7 +323,7 @@ class _ProductListPageState extends State<ProductListPage> {
                 children: [
                   // 產品名稱
                   Text(
-                    product['name'] ?? '未知產品',
+                    _formatSpecialCharacters(product['name'] ?? '未知產品'),
                     style: const TextStyle(
                       fontSize: 12.0,
                       fontWeight: FontWeight.bold,
@@ -375,7 +375,7 @@ class _ProductListPageState extends State<ProductListPage> {
                             // 添加商品到購物車
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('已將 ${product['name']} 加入購物車'),
+                                content: Text('已將 ${_formatSpecialCharacters(product['name'])} 加入購物車'),
                                 action: SnackBarAction(
                                   label: '查看購物車',
                                   onPressed: () {
@@ -396,5 +396,66 @@ class _ProductListPageState extends State<ProductListPage> {
         ),
       ),
     );
+  }
+
+  String _formatSpecialCharacters(String text) {
+    if (text == null || text.isEmpty) {
+      return '';
+    }
+    
+    // 創建一個映射表，將HTML實體轉換為對應的特殊字符
+    final Map<String, String> htmlEntities = {
+      '&quot;': '"',
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&apos;': "'",
+      '&#39;': "'",
+      '&lsquo;': "'",
+      '&rsquo;': "'",
+      '&ldquo;': '"',
+      '&rdquo;': '"',
+      '&ndash;': '–',
+      '&mdash;': '—',
+      '&nbsp;': ' ',
+      '&iexcl;': '¡',
+      '&cent;': '¢',
+      '&pound;': '£',
+      '&curren;': '¤',
+      '&yen;': '¥',
+      '&brvbar;': '¦',
+      '&sect;': '§',
+      '&uml;': '¨',
+      '&copy;': '©',
+      '&ordf;': 'ª',
+      '&laquo;': '«',
+      '&not;': '¬',
+      '&reg;': '®',
+      '&macr;': '¯',
+      '&deg;': '°',
+      '&plusmn;': '±',
+      '&sup2;': '²',
+      '&sup3;': '³',
+      '&acute;': '´',
+      '&micro;': 'µ',
+      '&para;': '¶',
+      '&middot;': '·',
+      '&cedil;': '¸',
+      '&sup1;': '¹',
+      '&ordm;': 'º',
+      '&raquo;': '»',
+      '&frac14;': '¼',
+      '&frac12;': '½',
+      '&frac34;': '¾',
+      '&iquest;': '¿',
+    };
+    
+    // 替換所有HTML實體
+    String result = text;
+    htmlEntities.forEach((entity, char) {
+      result = result.replaceAll(entity, char);
+    });
+    
+    return result;
   }
 } 

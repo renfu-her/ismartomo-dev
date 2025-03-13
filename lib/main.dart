@@ -13,6 +13,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:html/parser.dart' show parse;
 
 // 全局 SharedPreferences 實例
 late SharedPreferences prefs;
@@ -895,7 +896,7 @@ class ProductCard extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    product['name'] ?? '未知產品',
+                    _formatProductName(product['name'] ?? '未知產品'),
                     style: TextStyle(
                       fontSize: TextSizeConfig.calculateTextSize(12),
                       fontWeight: FontWeight.bold,
@@ -946,7 +947,7 @@ class ProductCard extends StatelessWidget {
                             // 添加商品到購物車
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('已將 ${product['name']} 加入購物車'),
+                                content: Text('已將 ${_formatProductName(product['name'])} 加入購物車'),
                                 action: SnackBarAction(
                                   label: '查看購物車',
                                   onPressed: () {
@@ -974,7 +975,78 @@ class ProductCard extends StatelessWidget {
     RegExp exp = RegExp(r"<[^>]*>", multiLine: true, caseSensitive: true);
     return htmlText.replaceAll(exp, '');
   }
+  
+  // 處理特殊字符轉換
+  String _formatSpecialCharacters(String text) {
+    if (text == null || text.isEmpty) {
+      return '';
+    }
+    
+    // 創建一個映射表，將HTML實體轉換為對應的特殊字符
+    final Map<String, String> htmlEntities = {
+      '&quot;': '"',
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&apos;': "'",
+      '&#39;': "'",
+      '&lsquo;': "'",
+      '&rsquo;': "'",
+      '&ldquo;': '"',
+      '&rdquo;': '"',
+      '&ndash;': '–',
+      '&mdash;': '—',
+      '&nbsp;': ' ',
+      '&iexcl;': '¡',
+      '&cent;': '¢',
+      '&pound;': '£',
+      '&curren;': '¤',
+      '&yen;': '¥',
+      '&brvbar;': '¦',
+      '&sect;': '§',
+      '&uml;': '¨',
+      '&copy;': '©',
+      '&ordf;': 'ª',
+      '&laquo;': '«',
+      '&not;': '¬',
+      '&reg;': '®',
+      '&macr;': '¯',
+      '&deg;': '°',
+      '&plusmn;': '±',
+      '&sup2;': '²',
+      '&sup3;': '³',
+      '&acute;': '´',
+      '&micro;': 'µ',
+      '&para;': '¶',
+      '&middot;': '·',
+      '&cedil;': '¸',
+      '&sup1;': '¹',
+      '&ordm;': 'º',
+      '&raquo;': '»',
+      '&frac14;': '¼',
+      '&frac12;': '½',
+      '&frac34;': '¾',
+      '&iquest;': '¿',
+    };
+    
+    // 替換所有HTML實體
+    String result = text;
+    htmlEntities.forEach((entity, char) {
+      result = result.replaceAll(entity, char);
+    });
+    
+    return result;
+  }
+  
+  // 格式化產品名稱，移除HTML標籤並處理特殊字符
+  String _formatProductName(String name) {
+    if (name == null || name.isEmpty) {
+      return '未知產品';
+    }
+    
+    // 先移除HTML標籤
+    String strippedText = _stripHtmlTags(name);
+    // 再處理特殊字符
+    return _formatSpecialCharacters(strippedText);
+  }
 }
-
-// 注意：ProductDetailPage 已移至 pages/product_detail_page.dart
-// 請使用 import 'pages/product_detail_page.dart' 來引用
