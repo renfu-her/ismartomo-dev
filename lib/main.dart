@@ -10,6 +10,7 @@ import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/information_page.dart';
+import 'pages/favorite_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -222,7 +223,7 @@ class _HomePageState extends State<HomePage> {
       const HomeContent(),
       const CategoryPage(),
       const CartPage(),
-      const Center(child: Text('收藏頁面開發中...')),
+      const FavoritePage(),
       const ProfilePage(),
     ];
     _fetchHomeData();
