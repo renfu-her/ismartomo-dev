@@ -87,6 +87,9 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         scaffoldBackgroundColor: Colors.white,
         cardColor: Colors.white,
+        canvasColor: Colors.white,
+        dialogBackgroundColor: Colors.white,
+        dividerColor: Colors.grey[300],
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
