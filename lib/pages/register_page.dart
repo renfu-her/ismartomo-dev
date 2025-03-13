@@ -111,23 +111,21 @@ class _RegisterPageState extends State<RegisterPage> {
         'confirm': _confirmPasswordController.text,
         'telephone': _telephoneController.text.trim(),
         'address_1': _address1Controller.text.trim(),
-        'address_2': _address2Controller.text.trim().isNotEmpty ? _address2Controller.text.trim() : ' ',
+        'address_2': _address2Controller.text.trim().isNotEmpty ? _address2Controller.text.trim() : '',
         'city': _cityController.text.trim(),
         'postcode': _postcodeController.text.trim(),
         'country_id': '206', // 台灣
         'zone_id': _selectedZoneId!,
-        'fax': _faxController.text.trim().isNotEmpty ? _faxController.text.trim() : ' ',
+        'fax': _faxController.text.trim().isNotEmpty ? _faxController.text.trim() : '',
         'custom_field[account][1]': '711',
         'newsletter': '0',
-        'agree': '1', // 同意條款
+        'company': '', // 公司欄位，必須傳遞空白
       };
       
       print('註冊數據: $userData');
       
       // 調用註冊 API
       final response = await _apiService.register(userData);
-      
-      print('註冊響應: $response');
       
       setState(() {
         _isLoading = false;

@@ -142,7 +142,7 @@ class ApiService {
   Future<Map<String, dynamic>> getProductDetails(String productId) async {
     try {
       // 直接構建完整的 URL
-      String url = 'https://ismartdemo.com.tw/index.php?route=extension/module/api/gws_appproduct&api_key=$_apiKey&product_id=$productId';
+      String url = '${_baseUrl}/gws_appproduct&api_key=$_apiKey&product_id=$productId';
       
       print('獲取產品詳情，URL: $url');
       
@@ -206,30 +206,45 @@ class ApiService {
         print('$key: $value');
       });
       
+      // 確保包含必要參數
+      if (!userData.containsKey('company')) {
+        userData['company'] = '';
+      }
+      
+      // 創建 FormData
+      final formData = FormData.fromMap(userData);
+      
+      // 打印 FormData 字段
+      print('FormData 字段:');
+      formData.fields.forEach((field) {
+        print('${field.key}: ${field.value}');
+      });
+      
       // 設置請求選項 - 根據 Thunder Client 的響應頭信息設置
       final options = Options(
         contentType: Headers.formUrlEncodedContentType,
         followRedirects: false,
         headers: {
           'Accept': 'application/json',
-          'User-Agent': 'Flutter/1.0',
-          'Connection': 'close',  // 根據響應頭設置
+          'Connection': 'close',
         },
         validateStatus: (status) {
           return status != null && status < 500;
         },
       );
       
-      print('使用 Map<String, dynamic> 直接發送請求');
+      print('使用 FormData 發送請求');
       
       // 直接使用 POST 方法發送請求
       final response = await _dio.post(
         url,
-        data: userData,  // 直接使用 Map<String, dynamic>
+        data: formData,
         options: options,
       );
-      
+
       print('註冊響應狀態碼: ${response.statusCode}');
+      print('註冊響應頭: ${response.headers}');
+      
       if (response.data != null) {
         print('註冊響應數據類型: ${response.data.runtimeType}');
         print('註冊響應數據: ${response.data}');
