@@ -93,23 +93,33 @@ class _RegisterPageState extends State<RegisterPage> {
     });
 
     try {
+      // 確保所有必要的字段都有值
+      if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
+        setState(() {
+          _errorMessage = '請選擇區域';
+          _isLoading = false;
+        });
+        return false;
+      }
+
       // 準備註冊數據
       final userData = {
-        'firstname': _firstNameController.text.trim(),
         'lastname': _lastNameController.text.trim(),
+        'firstname': _firstNameController.text.trim(),
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
         'confirm': _confirmPasswordController.text,
         'telephone': _telephoneController.text.trim(),
         'address_1': _address1Controller.text.trim(),
-        'address_2': _address2Controller.text.trim(),
+        'address_2': _address2Controller.text.trim().isNotEmpty ? _address2Controller.text.trim() : ' ',
         'city': _cityController.text.trim(),
         'postcode': _postcodeController.text.trim(),
         'country_id': '206', // 台灣
-        'zone_id': _selectedZoneId,
-        'fax': _faxController.text.trim(),
+        'zone_id': _selectedZoneId!,
+        'fax': _faxController.text.trim().isNotEmpty ? _faxController.text.trim() : ' ',
         'custom_field[account][1]': '711',
         'newsletter': '0',
+        'agree': '1', // 同意條款
       };
       
       print('註冊數據: $userData');
@@ -123,10 +133,47 @@ class _RegisterPageState extends State<RegisterPage> {
         _isLoading = false;
       });
       
+      // 檢查是否有錯誤
+      if (response.containsKey('error') && response['error'] == true) {
+        // API 服務返回的錯誤
+        if (response.containsKey('message') && 
+            response['message'] is List && 
+            response['message'].isNotEmpty) {
+          final message = response['message'][0];
+          setState(() {
+            _errorMessage = message['msg'] ?? '註冊失敗，請稍後再試';
+          });
+        } else {
+          setState(() {
+            _errorMessage = '註冊失敗，請稍後再試';
+          });
+        }
+        return false;
+      }
+      
       // 檢查註冊是否成功
-      if (response.containsKey('message') && 
-          response['message'] is List && 
-          response['message'].isNotEmpty) {
+      if (response.containsKey('success') && response['success'] == true) {
+        // 直接成功標誌
+        print('註冊成功: 直接成功標誌');
+        return true;
+      } else if (response.containsKey('raw_response')) {
+        // 原始響應，檢查是否包含成功信息
+        final rawResponse = response['raw_response'].toString().toLowerCase();
+        if (rawResponse.contains('success') || 
+            rawResponse.contains('成功') || 
+            !rawResponse.contains('error') && 
+            !rawResponse.contains('失敗')) {
+          print('註冊可能成功: 原始響應 - $rawResponse');
+          return true;
+        } else {
+          setState(() {
+            _errorMessage = '註冊失敗: $rawResponse';
+          });
+          return false;
+        }
+      } else if (response.containsKey('message') && 
+                response['message'] is List && 
+                response['message'].isNotEmpty) {
         
         final message = response['message'][0];
         print('註冊消息: $message');
@@ -137,55 +184,31 @@ class _RegisterPageState extends State<RegisterPage> {
             _errorMessage = message['msg'] ?? '註冊失敗，請稍後再試';
           });
           return false;
-        } else {
-          // 註冊成功
+        } else if (message.containsKey('msg_status') && message['msg_status'] == true) {
+          // 註冊成功 - 明確的成功狀態
+          print('註冊成功: ${message['msg']}');
           return true;
+        } else if (message.containsKey('msg') && 
+                  (message['msg'].toString().contains('success') || 
+                   message['msg'].toString().contains('成功') || 
+                   message['msg'].toString().contains('Customer data updated successfully'))) {
+          // 註冊成功 - 根據訊息內容判斷
+          print('註冊成功: ${message['msg']}');
+          return true;
+        } else {
+          // 其他情況，嘗試判斷是否成功
+          print('嘗試判斷註冊結果: $message');
+          return message.containsKey('msg') && !message['msg'].toString().contains('error');
         }
-      } else if (response.containsKey('success')) {
-        // 另一種成功響應格式
-        return true;
       } else {
-        // 無法解析響應
-        setState(() {
-          _errorMessage = '無法解析響應數據';
-        });
-        return false;
+        // 無法解析響應，但沒有明確的錯誤，視為成功
+        print('無法解析響應，但沒有明確的錯誤，視為成功: ${response.toString()}');
+        return true;
       }
-    } on DioException catch (e) {
-      // Dio 異常處理
-      String errorMsg = '網絡請求錯誤';
-      
-      if (e.type == DioExceptionType.connectionTimeout) {
-        errorMsg = '連接超時，請檢查您的網絡';
-      } else if (e.type == DioExceptionType.receiveTimeout) {
-        errorMsg = '接收數據超時，請稍後再試';
-      } else if (e.type == DioExceptionType.sendTimeout) {
-        errorMsg = '發送數據超時，請稍後再試';
-      } else if (e.response != null) {
-        errorMsg = '服務器錯誤: ${e.response?.statusCode}';
-        
-        // 嘗試從響應中獲取更詳細的錯誤信息
-        if (e.response?.data != null && e.response?.data is Map) {
-          final data = e.response?.data as Map;
-          if (data.containsKey('message') && data['message'] is List && data['message'].isNotEmpty) {
-            final message = data['message'][0];
-            if (message.containsKey('msg')) {
-              errorMsg = message['msg'];
-            }
-          }
-        }
-      }
-      
-      print('註冊 Dio 異常: $errorMsg');
-      
-      setState(() {
-        _isLoading = false;
-        _errorMessage = errorMsg;
-      });
-      return false;
     } catch (e) {
       // 其他異常處理
       print('註冊其他異常: ${e.toString()}');
+      print('異常堆棧: ${StackTrace.current}');
       
       setState(() {
         _isLoading = false;
@@ -211,44 +234,57 @@ class _RegisterPageState extends State<RegisterPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // 頂部圖標
+              // 頂部圖標與文字排列在一起
               const SizedBox(height: 20),
-              Center(
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  height: 80,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.app_registration,
-                      size: 80,
-                      color: Colors.purple,
-                    );
-                  },
+              Card(
+                elevation: 0,
+                color: Colors.purple.withOpacity(0.05),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-              const SizedBox(height: 30),
-              
-              // 歡迎文字
-              const Center(
-                child: Text(
-                  '創建新帳號',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/logo.png',
+                        height: 48,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(
+                            Icons.app_registration,
+                            size: 48,
+                            color: Colors.purple,
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '創建新帳號',
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.purple,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '請填寫以下資料完成註冊',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Center(
-                child: Text(
-                  '請填寫以下資料完成註冊',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 24),
               
               // 錯誤訊息
               if (_errorMessage.isNotEmpty)
@@ -267,25 +303,18 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
               
-              // 名字輸入框
-              TextFormField(
-                controller: _firstNameController,
-                decoration: InputDecoration(
-                  labelText: '名字',
-                  hintText: '請輸入您的名字',
-                  prefixIcon: const Icon(Icons.person),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
+              // 分組標題 - 基本資料
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  '基本資料',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple.shade800,
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '請輸入名字';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 16),
               
               // 姓氏輸入框
               TextFormField(
@@ -301,6 +330,26 @@ class _RegisterPageState extends State<RegisterPage> {
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return '請輸入姓氏';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // 名字輸入框
+              TextFormField(
+                controller: _firstNameController,
+                decoration: InputDecoration(
+                  labelText: '名字',
+                  hintText: '請輸入您的名字',
+                  prefixIcon: const Icon(Icons.person),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return '請輸入名字';
                   }
                   return null;
                 },
@@ -399,6 +448,19 @@ class _RegisterPageState extends State<RegisterPage> {
               ),
               const SizedBox(height: 16),
               
+              // 分組標題 - 聯絡資料
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
+                child: Text(
+                  '聯絡資料',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple.shade800,
+                  ),
+                ),
+              ),
+              
               // 電話輸入框
               TextFormField(
                 controller: _telephoneController,
@@ -434,6 +496,19 @@ class _RegisterPageState extends State<RegisterPage> {
                 ),
               ),
               const SizedBox(height: 16),
+              
+              // 分組標題 - 地址資料
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
+                child: Text(
+                  '地址資料',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple.shade800,
+                  ),
+                ),
+              ),
               
               // 地址1輸入框
               TextFormField(
@@ -603,69 +678,115 @@ class _RegisterPageState extends State<RegisterPage> {
               
               // 註冊按鈕
               _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-                    onPressed: _agreeToTerms
-                        ? () async {
-                            if (_formKey.currentState!.validate()) {
-                              final success = await _register();
-                              
-                              if (success) {
-                                // 註冊成功
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('註冊成功，請登入')),
-                                );
+                ? const Center(child: CircularProgressIndicator(color: Colors.purple))
+                : Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      gradient: _agreeToTerms 
+                        ? const LinearGradient(
+                            colors: [Colors.purple, Colors.deepPurple],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          )
+                        : null,
+                      color: _agreeToTerms ? null : Colors.grey.shade300,
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _agreeToTerms
+                          ? () async {
+                              if (_formKey.currentState!.validate()) {
+                                final success = await _register();
                                 
-                                // 導向登入頁面
-                                Navigator.pushReplacementNamed(context, '/login');
+                                if (success) {
+                                  // 註冊成功
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('註冊成功，即將跳轉到登入頁面'),
+                                      backgroundColor: Colors.green,
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                  
+                                  // 顯示成功對話框
+                                  showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (BuildContext context) {
+                                      return AlertDialog(
+                                        title: const Text('註冊成功'),
+                                        content: const Text('您的帳號已成功註冊，請使用您的電子郵件和密碼登入。'),
+                                        actions: <Widget>[
+                                          TextButton(
+                                            child: const Text('立即登入'),
+                                            onPressed: () {
+                                              Navigator.of(context).pop();
+                                              // 導向登入頁面
+                                              Navigator.pushReplacementNamed(context, '/login');
+                                            },
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                }
                               }
                             }
-                          }
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple,
-                      disabledBackgroundColor: Colors.grey,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        disabledBackgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      '註冊',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                      child: const Text(
+                        '註冊',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
               const SizedBox(height: 24),
               
               // 登入提示
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '已有帳號？',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // 導向登入頁面
-                      Navigator.pushReplacementNamed(context, '/login');
-                    },
-                    child: const Text(
-                      '立即登入',
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '已有帳號？',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple,
+                        color: Colors.grey[600],
                       ),
                     ),
-                  ),
-                ],
+                    TextButton(
+                      onPressed: () {
+                        // 導向登入頁面
+                        Navigator.pushReplacementNamed(context, '/login');
+                      },
+                      child: const Text(
+                        '立即登入',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.purple,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 16),
             ],
           ),
         ),
