@@ -3,6 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
 import 'login_page.dart';
 import 'register_page.dart';
+import 'information_page.dart';
+import '../services/api_service.dart';
 import '../services/user_service.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -13,6 +15,11 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final ApiService _apiService = ApiService();
+  bool _isLoadingInfo = false;
+  String _errorMessage = '';
+  List<Map<String, dynamic>> _informationList = [];
+  
   // 會員功能項目列表
   final List<Map<String, dynamic>> _memberFeatures = [
     {'title': '我的訂單', 'icon': FontAwesomeIcons.fileInvoice, 'color': Colors.orange},
@@ -20,20 +27,46 @@ class _ProfilePageState extends State<ProfilePage> {
     {'title': '收貨地址', 'icon': FontAwesomeIcons.locationDot, 'color': Colors.green},
     {'title': '我的收藏', 'icon': FontAwesomeIcons.heart, 'color': Colors.pink},
   ];
-  
-  // 相關說明項目列表
-  final List<Map<String, dynamic>> _infoItems = [
-    {'title': '最新消息', 'icon': FontAwesomeIcons.newspaper},
-    {'title': '推薦獎金計劃', 'icon': FontAwesomeIcons.gift},
-    {'title': '關於我們', 'icon': FontAwesomeIcons.circleInfo},
-    {'title': '技術支援', 'icon': FontAwesomeIcons.screwdriverWrench},
-    {'title': '服務流程', 'icon': FontAwesomeIcons.gears},
-    {'title': '線上客服', 'icon': FontAwesomeIcons.commentDots},
-    {'title': '如何使用折價代碼', 'icon': FontAwesomeIcons.tag},
-    {'title': '合作品牌', 'icon': FontAwesomeIcons.handshake},
-    {'title': '經銷優勢', 'icon': FontAwesomeIcons.chartLine},
-    {'title': '隱私與條款', 'icon': FontAwesomeIcons.shieldHalved},
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInformationList();
+  }
+
+  Future<void> _fetchInformationList() async {
+    setState(() {
+      _isLoadingInfo = true;
+      _errorMessage = '';
+    });
+
+    try {
+      final response = await _apiService.getAllInformation();
+      
+      setState(() {
+        _isLoadingInfo = false;
+        
+        if (response.containsKey('informations') && 
+            response['informations'] is List) {
+          _informationList = List<Map<String, dynamic>>.from(response['informations']);
+          
+          // 按照 sort_order 排序（如果有）
+          _informationList.sort((a, b) {
+            final aOrder = int.tryParse(a['sort_order']?.toString() ?? '') ?? 999;
+            final bOrder = int.tryParse(b['sort_order']?.toString() ?? '') ?? 999;
+            return aOrder.compareTo(bOrder);
+          });
+        } else {
+          _errorMessage = '無法獲取資訊列表';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingInfo = false;
+        _errorMessage = '獲取資訊列表失敗: ${e.toString()}';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,25 +116,51 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 
                 // 相關說明項目列表
-                ListView.separated(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: _infoItems.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      leading: FaIcon(_infoItems[index]['icon'], size: 20, color: Colors.grey[600]),
-                      title: Text(_infoItems[index]['title']),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {
-                        // 點擊項目的處理邏輯
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('您點擊了: ${_infoItems[index]['title']}')),
-                        );
-                      },
-                    );
-                  },
-                ),
+                _isLoadingInfo
+                  ? const Center(child: CircularProgressIndicator())
+                  : _errorMessage.isNotEmpty
+                    ? Center(
+                        child: Column(
+                          children: [
+                            Text(
+                              _errorMessage,
+                              style: const TextStyle(color: Colors.red),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 10),
+                            ElevatedButton(
+                              onPressed: _fetchInformationList,
+                              child: const Text('重試'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: _informationList.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final information = _informationList[index];
+                          final title = information['title'] ?? '無標題';
+                          
+                          return ListTile(
+                            title: Text(title),
+                            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                            onTap: () {
+                              // 導航到資訊頁面
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => InformationPage(
+                                    informationId: information['information_id'],
+                                    title: title,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
                 
                 // 底部版本信息
                 Padding(

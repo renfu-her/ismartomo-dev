@@ -9,6 +9,7 @@ import 'pages/product_list_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
 import 'pages/register_page.dart';
+import 'pages/information_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -165,6 +166,17 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(
             builder: (context) {
               return ProductListPage(arguments: args);
+            },
+          );
+        }
+        if (settings.name == '/information') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) {
+              return InformationPage(
+                informationId: args['information_id'],
+                title: args['title'],
+              );
             },
           );
         }

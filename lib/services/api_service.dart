@@ -347,4 +347,14 @@ class ApiService {
       'product_id': productId
     });
   }
+  
+  // 獲取所有資訊頁面
+  Future<Map<String, dynamic>> getAllInformation() async {
+    return _get('gws_information');
+  }
+  
+  // 獲取特定資訊頁面
+  Future<Map<String, dynamic>> getInformationById(String informationId) async {
+    return _get('gws_information', extraParams: {'information_id': informationId});
+  }
 } 
