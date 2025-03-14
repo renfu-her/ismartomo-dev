@@ -435,7 +435,7 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   String _formatSpecialCharacters(String text) {
-    if (text == null || text.isEmpty) {
+    if (text.isEmpty) {
       return '';
     }
     

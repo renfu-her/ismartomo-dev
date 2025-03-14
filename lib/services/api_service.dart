@@ -43,7 +43,7 @@ class ApiService {
       final loginUrl = 'gws_appcustomer/login';
       
       final response = await _dio.post(
-        '${_baseUrl}/$loginUrl&api_key=$_apiKey',
+        '$_baseUrl/$loginUrl&api_key=$_apiKey',
         data: FormData.fromMap({
           'email': email,
           'password': password,
@@ -136,7 +136,7 @@ class ApiService {
   Future<Map<String, dynamic>> getProductDetails(String productId) async {
     try {
       // 直接構建完整的 URL
-      String url = '${_baseUrl}/gws_appproduct&api_key=$_apiKey&product_id=$productId';
+      String url = '$_baseUrl/gws_appproduct&api_key=$_apiKey&product_id=$productId';
       
       // 發送請求
       final response = await _dio.get(url);
@@ -186,7 +186,7 @@ class ApiService {
     try {
       // 使用與 login 方法相同的 URL 構建方式
       final registerUrl = 'gws_customer/add';
-      final url = '${_baseUrl}/$registerUrl&api_key=$_apiKey';
+      final url = '$_baseUrl/$registerUrl&api_key=$_apiKey';
       
       // 確保包含必要參數
       if (!userData.containsKey('company')) {
@@ -296,10 +296,10 @@ class ApiService {
       // 檢查 endpoint 是否包含斜杠
       if (endpoint.contains('/')) {
         // 如果包含斜杠，則使用原始 endpoint
-        url = '${_baseUrl}/$endpoint&api_key=$_apiKey';
+        url = '$_baseUrl/$endpoint&api_key=$_apiKey';
       } else {
         // 如果不包含斜杠，則直接添加 endpoint
-        url = '${_baseUrl}/$endpoint&api_key=$_apiKey';
+        url = '$_baseUrl/$endpoint&api_key=$_apiKey';
       }
       
       // 添加額外的參數
@@ -382,7 +382,7 @@ class ApiService {
   Future<Map<String, dynamic>> updateCustomerProfile(String customerId, Map<String, dynamic> data) async {
     try {
       // 構建 URL
-      final url = '${_baseUrl}/gws_customer/edit&api_key=$_apiKey&customer_id=$customerId';
+      final url = '$_baseUrl/gws_customer/edit&api_key=$_apiKey&customer_id=$customerId';
       
       // 創建 FormData
       final formData = FormData.fromMap(data);

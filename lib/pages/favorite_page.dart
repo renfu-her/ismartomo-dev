@@ -342,7 +342,7 @@ class _FavoritePageState extends State<FavoritePage> {
   
   // 處理特殊字符轉換
   String _formatSpecialCharacters(String text) {
-    if (text == null || text.isEmpty) {
+    if (text.isEmpty) {
       return '';
     }
     
@@ -404,7 +404,7 @@ class _FavoritePageState extends State<FavoritePage> {
   
   // 格式化產品名稱，移除HTML標籤並處理特殊字符
   String _formatProductName(String name) {
-    if (name == null || name.isEmpty) {
+    if (name.isEmpty) {
       return '未知產品';
     }
     

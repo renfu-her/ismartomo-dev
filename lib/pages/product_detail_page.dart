@@ -23,7 +23,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Map<String, dynamic> _productData = {};
   int _quantity = 1;
   // 使用 Map 存儲不同選項類型的選擇
-  Map<String, String> _selectedOptions = {};
+  final Map<String, String> _selectedOptions = {};
   double _basePrice = 0.0; // 基本價格
   double _finalPrice = 0.0; // 最終價格（含選項）
   
@@ -589,7 +589,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             String optionText = value['name'];
             if (value.containsKey('price') && value['price'] != '0') {
               String pricePrefix = value['price_prefix'] ?? '+';
-              optionText += ' (${pricePrefix}${_formatOptionPrice(value['price'])})';
+              optionText += ' ($pricePrefix${_formatOptionPrice(value['price'])})';
             }
             
             return ChoiceChip(
@@ -624,7 +624,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   String priceInfo = '';
                   if (selectedValue.containsKey('price') && selectedValue['price'] != '0') {
                     String pricePrefix = selectedValue['price_prefix'] ?? '+';
-                    priceInfo = ' (${pricePrefix}${_formatOptionPrice(selectedValue['price'])})';
+                    priceInfo = ' ($pricePrefix${_formatOptionPrice(selectedValue['price'])})';
                   }
                   
                   return Text(
@@ -658,7 +658,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             String optionText = value['name'];
             if (value.containsKey('price') && value['price'] != '0') {
               String pricePrefix = value['price_prefix'] ?? '+';
-              optionText += ' (${pricePrefix}${_formatOptionPrice(value['price'])})';
+              optionText += ' ($pricePrefix${_formatOptionPrice(value['price'])})';
             }
             
             return ChoiceChip(
@@ -693,7 +693,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   String priceInfo = '';
                   if (selectedValue.containsKey('price') && selectedValue['price'] != '0') {
                     String pricePrefix = selectedValue['price_prefix'] ?? '+';
-                    priceInfo = ' (${pricePrefix}${_formatOptionPrice(selectedValue['price'])})';
+                    priceInfo = ' ($pricePrefix${_formatOptionPrice(selectedValue['price'])})';
                   }
                   
                   return Text(
@@ -868,7 +868,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   
   // 處理特殊字符轉換
   String _formatSpecialCharacters(String text) {
-    if (text == null || text.isEmpty) {
+    if (text.isEmpty) {
       return '';
     }
     

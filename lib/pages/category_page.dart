@@ -14,7 +14,7 @@ class _CategoryPageState extends State<CategoryPage> {
   String _errorMessage = '';
   List<dynamic> _categories = [];
   // 用於追蹤每個分類是否展開
-  Map<String, bool> _expandedCategories = {};
+  final Map<String, bool> _expandedCategories = {};
   
   @override
   void initState() {

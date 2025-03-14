@@ -89,7 +89,6 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         cardColor: Colors.white,
         canvasColor: Colors.white,
-        dialogBackgroundColor: Colors.white,
         dividerColor: Colors.grey[300],
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.white,
@@ -140,7 +139,7 @@ class MyApp extends StatelessWidget {
             color: Colors.grey,
           ),
         ),
-        useMaterial3: true,
+        useMaterial3: true, dialogTheme: DialogThemeData(backgroundColor: Colors.white),
       ),
       home: const HomePage(),
       routes: {
@@ -1028,7 +1027,7 @@ class ProductCard extends StatelessWidget {
   
   // 處理特殊字符轉換
   String _formatSpecialCharacters(String text) {
-    if (text == null || text.isEmpty) {
+    if (text.isEmpty) {
       return '';
     }
     
@@ -1090,7 +1089,7 @@ class ProductCard extends StatelessWidget {
   
   // 格式化產品名稱，移除HTML標籤並處理特殊字符
   String _formatProductName(String name) {
-    if (name == null || name.isEmpty) {
+    if (name.isEmpty) {
       return '未知產品';
     }
     
