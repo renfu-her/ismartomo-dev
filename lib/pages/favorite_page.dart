@@ -308,18 +308,14 @@ class _FavoritePageState extends State<FavoritePage> {
                           constraints: const BoxConstraints(),
                           icon: const FaIcon(FontAwesomeIcons.cartShopping, size: 18),
                           onPressed: () {
-                            // 添加商品到購物車
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('已將 ${_formatProductName(product['name'])} 加入購物車'),
-                                action: SnackBarAction(
-                                  label: '查看購物車',
-                                  onPressed: () {
-                                    Navigator.of(context).pushNamed('/cart');
-                                  },
-                                ),
-                              ),
-                            );
+                            // 導航到產品詳情頁面，與點擊產品卡片的行為一致
+                            Navigator.of(context).pushNamed(
+                              '/product',
+                              arguments: {'productDetails': product},
+                            ).then((_) {
+                              // 返回時刷新收藏列表
+                              _fetchFavoriteProducts();
+                            });
                           },
                         ),
                       ),

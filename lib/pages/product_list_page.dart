@@ -426,17 +426,11 @@ class _ProductListPageState extends State<ProductListPage> {
                           constraints: const BoxConstraints(),
                           icon: const FaIcon(FontAwesomeIcons.cartShopping, size: 18),
                           onPressed: () {
-                            // 添加商品到購物車
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('已將 ${_formatSpecialCharacters(product['name'])} 加入購物車'),
-                                action: SnackBarAction(
-                                  label: '查看購物車',
-                                  onPressed: () {
-                                    Navigator.of(context).pushNamed('/cart');
-                                  },
-                                ),
-                              ),
+                            // 導航到產品詳情頁面，與點擊產品卡片的行為一致
+                            Navigator.pushNamed(
+                              context,
+                              '/product',
+                              arguments: {'productDetails': product},
                             );
                           },
                         ),
