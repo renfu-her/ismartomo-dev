@@ -585,12 +585,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           spacing: 8,
           runSpacing: 8,
           children: (option['product_option_value'] as List).map<Widget>((value) {
-            // 構建選項顯示文本，包含價格信息
+            // 構建選項顯示文本，不包含價格信息
             String optionText = value['name'];
-            if (value.containsKey('price') && value['price'] != '0') {
-              String pricePrefix = value['price_prefix'] ?? '+';
-              optionText += ' ($pricePrefix${_formatOptionPrice(value['price'])})';
-            }
             
             return ChoiceChip(
               label: Text(optionText),
@@ -607,7 +603,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           }).toList(),
         ),
         
-        // 顯示選中的顏色名稱和價格
+        // 顯示選中的顏色名稱，不顯示價格
         if (_selectedOptions.containsKey(option['name']))
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -621,14 +617,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 
                 if (selectedValue != null) {
                   String colorName = selectedValue['name'];
-                  String priceInfo = '';
-                  if (selectedValue.containsKey('price') && selectedValue['price'] != '0') {
-                    String pricePrefix = selectedValue['price_prefix'] ?? '+';
-                    priceInfo = ' ($pricePrefix${_formatOptionPrice(selectedValue['price'])})';
-                  }
                   
                   return Text(
-                    '已選: $colorName$priceInfo',
+                    '已選: $colorName',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -654,12 +645,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           spacing: 8,
           runSpacing: 8,
           children: (option['product_option_value'] as List).map<Widget>((value) {
-            // 構建選項顯示文本，包含價格信息
+            // 構建選項顯示文本，不包含價格信息
             String optionText = value['name'];
-            if (value.containsKey('price') && value['price'] != '0') {
-              String pricePrefix = value['price_prefix'] ?? '+';
-              optionText += ' ($pricePrefix${_formatOptionPrice(value['price'])})';
-            }
             
             return ChoiceChip(
               label: Text(optionText),
@@ -676,7 +663,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           }).toList(),
         ),
         
-        // 顯示選中的尺寸和價格
+        // 顯示選中的尺寸，不顯示價格
         if (_selectedOptions.containsKey(option['name']))
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -690,14 +677,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 
                 if (selectedValue != null) {
                   String sizeName = selectedValue['name'];
-                  String priceInfo = '';
-                  if (selectedValue.containsKey('price') && selectedValue['price'] != '0') {
-                    String pricePrefix = selectedValue['price_prefix'] ?? '+';
-                    priceInfo = ' ($pricePrefix${_formatOptionPrice(selectedValue['price'])})';
-                  }
                   
                   return Text(
-                    '已選: $sizeName$priceInfo',
+                    '已選: $sizeName',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -847,23 +829,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       return 'NT\$${roundedPrice.toInt()}';
     }
     return 'NT\$${roundedPrice.toStringAsFixed(2)}';
-  }
-  
-  // 格式化選項價格
-  String _formatOptionPrice(String priceStr) {
-    // 移除貨幣符號和空格，轉換為數字
-    priceStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
-    try {
-      double price = double.parse(priceStr);
-      // 如果是整數，不顯示小數部分
-      if (price == price.toInt()) {
-        return 'NT\$${price.toInt()}';
-      }
-      return 'NT\$${price.toStringAsFixed(2)}';
-    } catch (e) {
-      print('選項價格轉換錯誤: $e');
-      return priceStr;
-    }
   }
   
   // 處理特殊字符轉換
