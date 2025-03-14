@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'dart:convert';
+import 'package:flutter/material.dart';
+import '../main.dart';
 
 class ApiService {
   static const String _baseUrl = 'https://ismartdemo.com.tw/index.php?route=extension/module/api';
@@ -34,6 +36,16 @@ class ApiService {
         // 移除 print 語句
       },
     ));
+  }
+  
+  // 獲取用戶 ID
+  Future<String?> _getCustomerId() async {
+    try {
+      return prefs.getString('user_customer_id');
+    } catch (e) {
+      debugPrint('獲取用戶 ID 錯誤: ${e.toString()}');
+      return null;
+    }
   }
   
   // 用戶登入
@@ -135,8 +147,16 @@ class ApiService {
   // 獲取產品詳情
   Future<Map<String, dynamic>> getProductDetails(String productId) async {
     try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      
       // 直接構建完整的 URL
       String url = '$_baseUrl/gws_appproduct&api_key=$_apiKey&product_id=$productId';
+      
+      // 添加 customer_id 參數
+      if (customerId != null && customerId.isNotEmpty) {
+        url += '&customer_id=$customerId';
+      }
       
       // 發送請求
       final response = await _dio.get(url);
@@ -290,6 +310,9 @@ class ApiService {
   // 通用 GET 請求方法
   Future<Map<String, dynamic>> _get(String endpoint, {Map<String, dynamic>? extraParams}) async {
     try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      
       // 構建完整的 URL
       String url;
       
@@ -300,6 +323,11 @@ class ApiService {
       } else {
         // 如果不包含斜杠，則直接添加 endpoint
         url = '$_baseUrl/$endpoint&api_key=$_apiKey';
+      }
+      
+      // 添加 customer_id 參數
+      if (customerId != null && customerId.isNotEmpty) {
+        url += '&customer_id=$customerId';
       }
       
       // 添加額外的參數

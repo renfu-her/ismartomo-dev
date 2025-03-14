@@ -342,13 +342,31 @@ class _ProductListPageState extends State<ProductListPage> {
                       Expanded(
                         flex: 5, // 5/10 = 50%
                         child: product['price'] != null
-                          ? Text(
-                              '${product['price']}',
-                              style: const TextStyle(
-                                fontSize: 14.0,
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 如果有特價，顯示原價（加上橫線）和特價
+                                if (product['special'] != null && product['special'] != false)
+                                  Text(
+                                    '${product['price']}',
+                                    style: const TextStyle(
+                                      fontSize: 10.0,
+                                      color: Colors.grey,
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                  ),
+                                // 顯示價格（如果有特價則顯示特價，否則顯示原價）
+                                Text(
+                                  product['special'] != null && product['special'] != false
+                                      ? '${product['special']}'
+                                      : '${product['price']}',
+                                  style: const TextStyle(
+                                    fontSize: 14.0,
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             )
                           : const SizedBox(),
                       ),

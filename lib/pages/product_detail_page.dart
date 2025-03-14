@@ -330,14 +330,42 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                             fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                        Text(
-                                          _formatPrice(_finalPrice * _quantity),
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.red,
+                                        // 如果有特價，顯示原價（加上橫線）和特價
+                                        if (_productData.containsKey('special') && 
+                                            _productData['special'] != null && 
+                                            _productData['special'] != false)
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              // 原價（加上橫線）
+                                              Text(
+                                                '${_productData['price']}',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.grey,
+                                                  decoration: TextDecoration.lineThrough,
+                                                ),
+                                              ),
+                                              // 特價
+                                              Text(
+                                                '${_productData['special']}',
+                                                style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        else
+                                          Text(
+                                            _formatPrice(_finalPrice * _quantity),
+                                            style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.red,
+                                            ),
                                           ),
-                                        ),
                                       ],
                                     ),
                                   ],

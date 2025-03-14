@@ -170,6 +170,7 @@ class UserService extends ChangeNotifier {
       return {
         'firstname': '用戶',
         'lastname': '',
+        'customer_id': '',
       };
     }
   }
