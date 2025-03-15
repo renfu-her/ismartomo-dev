@@ -1,4 +1,4 @@
-package com.example.test
+package com.rc168.ismartdemo
 
 import io.flutter.embedding.android.FlutterActivity
 
