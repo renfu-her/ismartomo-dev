@@ -191,19 +191,87 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
   }
   
-  void _addToCart() {
-    // 這裡可以實現添加到購物車的邏輯
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('已將 ${_formatSpecialCharacters(_productData['name'])} 加入購物車'),
-        action: SnackBarAction(
-          label: '查看購物車',
-          onPressed: () {
-            Navigator.of(context).pushNamed('/cart');
-          },
+  void _addToCart() async {
+    try {
+      // 檢查是否有必選選項未選擇
+      bool hasRequiredOptions = false;
+      bool allRequiredOptionsSelected = true;
+      
+      if (_productData.containsKey('options') && 
+          _productData['options'] is List) {
+        for (var option in _productData['options']) {
+          if (option['required'] == '1') {
+            hasRequiredOptions = true;
+            if (!_selectedOptions.containsKey(option['name']) || 
+                _selectedOptions[option['name']] == null || 
+                _selectedOptions[option['name']]!.isEmpty) {
+              allRequiredOptionsSelected = false;
+              break;
+            }
+          }
+        }
+      }
+      
+      if (hasRequiredOptions && !allRequiredOptionsSelected) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('請選擇所有必選選項')),
+        );
+        return;
+      }
+      
+      // 準備選項數據
+      Map<String, String> options = {};
+      if (_productData.containsKey('options') && 
+          _productData['options'] is List) {
+        for (var option in _productData['options']) {
+          if (_selectedOptions.containsKey(option['name'])) {
+            options[option['product_option_id']] = _selectedOptions[option['name']]!;
+          }
+        }
+      }
+      
+      // 顯示加載指示器
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+      
+      // 調用 API 加入購物車
+      final response = await _apiService.addToCart(
+        productId: _productData['product_id'].toString(),
+        quantity: _quantity,
+        options: options.isNotEmpty ? options : null,
+      );
+      
+      // 關閉加載指示器
+      Navigator.of(context).pop();
+      
+      // 顯示成功消息
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('已將 ${_formatSpecialCharacters(_productData['name'])} 加入購物車'),
+          action: SnackBarAction(
+            label: '查看購物車',
+            onPressed: () {
+              Navigator.of(context).pushNamed('/cart');
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      // 關閉加載指示器
+      Navigator.of(context, rootNavigator: true).pop();
+      
+      // 顯示錯誤消息
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('加入購物車失敗: ${e.toString()}')),
+      );
+    }
   }
   
   @override
@@ -534,15 +602,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           child: ElevatedButton(
                             onPressed: isOutOfStock
                                 ? null
-                                : () {
-                                    // 加入購物車邏輯
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('已加入購物車'),
-                                        duration: Duration(seconds: 2),
-                                      ),
-                                    );
-                                  },
+                                : _addToCart,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: isOutOfStock ? Colors.grey : Colors.white,
                               foregroundColor: isOutOfStock ? Colors.white : Colors.black,

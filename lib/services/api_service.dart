@@ -470,4 +470,168 @@ class ApiService {
       return {'error': true, 'message': [{'msg': '發生錯誤: ${e.toString()}', 'msg_status': false}]};
     }
   }
+  
+  // 加入購物車
+  Future<Map<String, dynamic>> addToCart({
+    required String productId,
+    required int quantity,
+    Map<String, String>? options,
+  }) async {
+    try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('用戶未登入');
+      }
+      
+      // 構建 URL
+      final url = '$_baseUrl/gws_appcustomer_cart/add&customer_id=$customerId&api_key=$_apiKey';
+      
+      // 構建表單數據
+      Map<String, dynamic> formData = {
+        'product_id': productId,
+        'quantity': quantity.toString(),
+      };
+      
+      // 添加選項
+      if (options != null && options.isNotEmpty) {
+        options.forEach((optionId, valueId) {
+          formData['option[$optionId]'] = valueId;
+        });
+      }
+      
+      // 發送請求
+      final response = await _dio.post(
+        url,
+        data: FormData.fromMap(formData),
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) {
+            return status != null && status < 500;
+          },
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else if (response.data is String) {
+          try {
+            return jsonDecode(response.data);
+          } catch (e) {
+            return {'success': true, 'message': response.data};
+          }
+        } else {
+          return {'success': true};
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('加入購物車失敗: ${e.toString()}');
+    }
+  }
+  
+  // 獲取購物車
+  Future<Map<String, dynamic>> getCart() async {
+    try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('用戶未登入');
+      }
+      
+      // 構建 URL 並發送請求
+      return _get('gws_appcustomer_cart&customer_id=$customerId');
+    } catch (e) {
+      throw Exception('獲取購物車失敗: ${e.toString()}');
+    }
+  }
+  
+  // 更新購物車中的商品數量
+  Future<Map<String, dynamic>> updateCartQuantity(String cartId, int quantity) async {
+    try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('用戶未登入');
+      }
+      
+      // 構建 URL
+      final url = '$_baseUrl/gws_appcustomer_cart/update&customer_id=$customerId&api_key=$_apiKey';
+      
+      // 構建表單數據
+      final formData = FormData.fromMap({
+        'cart_id': cartId,
+        'quantity': quantity.toString(),
+      });
+      
+      // 發送請求
+      final response = await _dio.post(
+        url,
+        data: formData,
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) {
+            return status != null && status < 500;
+          },
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else if (response.data is String) {
+          try {
+            return jsonDecode(response.data);
+          } catch (e) {
+            return {'success': true, 'message': response.data};
+          }
+        } else {
+          return {'success': true};
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('更新購物車失敗: ${e.toString()}');
+    }
+  }
+  
+  // 從購物車中移除商品
+  Future<Map<String, dynamic>> removeFromCart(String cartId) async {
+    try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('用戶未登入');
+      }
+      
+      // 構建 URL - 使用正確的 API 路徑
+      final url = '$_baseUrl/gws_appcustomer_cart/remove&customer_id=$customerId&cart_id=$cartId&api_key=$_apiKey';
+      
+      // 發送請求
+      final response = await _dio.get(url);
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else if (response.data is String) {
+          try {
+            return jsonDecode(response.data);
+          } catch (e) {
+            return {'success': true, 'message': response.data};
+          }
+        } else {
+          return {'success': true};
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('從購物車移除商品失敗: ${e.toString()}');
+    }
+  }
 } 
