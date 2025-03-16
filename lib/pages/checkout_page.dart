@@ -1074,11 +1074,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     orderData['totals[2][value]'] = finalTotal.toString();
     orderData['totals[2][sort_order]'] = '3';
     
-    // 其他必要參數
-    orderData['affiliate_id'] = '0';
-    orderData['comment'] = '';
-    orderData['vouchers'] = ''; // 添加優惠券欄位
-    
     // 將完整的 orderData 輸出到調試控制台和日誌文件
     debugPrint('==================== 訂單數據開始 ====================');
     
