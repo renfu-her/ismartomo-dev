@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import 'dart:convert'; // 添加 dart:convert 導入
+import 'dart:io'; // 添加 dart:io 導入
+import 'package:path_provider/path_provider.dart'; // 添加 path_provider 導入
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -1076,59 +1078,86 @@ class _CheckoutPageState extends State<CheckoutPage> {
     orderData['comment'] = '';
     orderData['vouchers'] = ''; // 添加優惠券欄位
     
-    // 將完整的 orderData 輸出到調試控制台
+    // 將完整的 orderData 輸出到調試控制台和日誌文件
     debugPrint('==================== 訂單數據開始 ====================');
+    
+    // 創建日誌內容
+    StringBuffer logContent = StringBuffer();
+    logContent.writeln('==================== 訂單數據開始 ====================');
     
     // 以簡潔的格式輸出所有欄位和值
     try {
       // 輸出訂單數據的總數
       debugPrint('訂單數據總數: ${orderData.length} 個鍵值對');
-      debugPrint('');
+      logContent.writeln('訂單數據總數: ${orderData.length} 個鍵值對');
+      logContent.writeln('');
       
       // 按照類別分組輸出所有欄位
       debugPrint('【客戶信息】');
+      logContent.writeln('【客戶信息】');
       orderData.keys.where((key) => key.startsWith('customer[')).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       debugPrint('');
+      logContent.writeln('');
       
       debugPrint('【付款地址】');
+      logContent.writeln('【付款地址】');
       orderData.keys.where((key) => key.startsWith('payment_address[')).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       debugPrint('');
+      logContent.writeln('');
       
       debugPrint('【配送地址】');
+      logContent.writeln('【配送地址】');
       orderData.keys.where((key) => key.startsWith('shipping_address[')).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       debugPrint('');
+      logContent.writeln('');
       
       debugPrint('【付款方式】');
+      logContent.writeln('【付款方式】');
       orderData.keys.where((key) => key.startsWith('payment_method[')).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       debugPrint('');
+      logContent.writeln('');
       
       debugPrint('【配送方式】');
+      logContent.writeln('【配送方式】');
       orderData.keys.where((key) => key.startsWith('shipping_method[')).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       debugPrint('');
+      logContent.writeln('');
       
       debugPrint('【商品信息】');
+      logContent.writeln('【商品信息】');
       orderData.keys.where((key) => key.startsWith('products[')).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       debugPrint('');
+      logContent.writeln('');
       
       debugPrint('【訂單總計】');
+      logContent.writeln('【訂單總計】');
       orderData.keys.where((key) => key.startsWith('totals[')).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       debugPrint('');
+      logContent.writeln('');
       
       debugPrint('【其他參數】');
+      logContent.writeln('【其他參數】');
       orderData.keys.where((key) => 
         !key.startsWith('customer[') && 
         !key.startsWith('payment_address[') && 
@@ -1139,13 +1168,39 @@ class _CheckoutPageState extends State<CheckoutPage> {
         !key.startsWith('totals[')
       ).forEach((key) {
         debugPrint('$key = ${orderData[key]}');
+        logContent.writeln('$key = ${orderData[key]}');
       });
       
+      // 將完整的 JSON 數據添加到日誌
+      logContent.writeln('');
+      logContent.writeln('【完整 JSON 數據】');
+      final JsonEncoder encoder = JsonEncoder.withIndent('  ');
+      final String prettyJson = encoder.convert(orderData);
+      logContent.writeln(prettyJson);
+      
     } catch (e) {
-      debugPrint('輸出訂單數據時發生錯誤: ${e.toString()}');
+      final errorMsg = '輸出訂單數據時發生錯誤: ${e.toString()}';
+      debugPrint(errorMsg);
+      logContent.writeln(errorMsg);
     }
     
     debugPrint('==================== 訂單數據結束 ====================');
+    logContent.writeln('==================== 訂單數據結束 ====================');
+    
+    // 將日誌內容寫入文件
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/order.log');
+      await file.writeAsString(logContent.toString(), mode: FileMode.append);
+      debugPrint('訂單數據已寫入日誌文件: ${file.path}');
+      
+      // 顯示提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('訂單數據已寫入日誌文件: ${file.path}')),
+      );
+    } catch (e) {
+      debugPrint('寫入日誌文件時發生錯誤: ${e.toString()}');
+    }
     
     return orderData;
   }
