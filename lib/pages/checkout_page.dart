@@ -999,8 +999,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     
     // 配送方式
     final shippingFee = _calculateShippingFee();
-    orderData['shipping_method[title]'] = shippingFee > 0 ? '運費' : '免運費';
-    orderData['shipping_method[code]'] = 'shipping';
+    orderData['shipping_method[title]'] = shippingFee > 0 ? '一般運費' : '免運費';
+    orderData['shipping_method[code]'] = shippingFee > 0 ? 'shipping.flat' : 'shipping.free';
     
     // 商品信息
     for (int i = 0; i < _cartItems.length; i++) {
@@ -1068,7 +1068,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     
     // 2. 運費
     orderData['totals[1][code]'] = 'shipping';
-    orderData['totals[1][title]'] = shippingFeeValue > 0 ? '運費' : '免運費';
+    orderData['totals[1][title]'] = shippingFeeValue > 0 ? '一般運費' : '免運費';
     orderData['totals[1][value]'] = shippingFeeValue.toString();
     orderData['totals[1][sort_order]'] = '2';
     
@@ -1086,20 +1086,70 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // 將完整的 orderData 輸出到調試控制台
     debugPrint('==================== 訂單數據開始 ====================');
     
-    // 使用 JsonEncoder 將 orderData 轉換為格式化的 JSON 字符串
-    final JsonEncoder encoder = JsonEncoder.withIndent('  ');
+    // 以簡潔的格式輸出所有欄位和值
     try {
-      final String prettyJson = encoder.convert(orderData);
-      // 由於 debugPrint 對長字符串有限制，我們按行分割輸出
-      prettyJson.split('\n').forEach((line) {
-        debugPrint(line);
+      // 輸出訂單數據的總數
+      debugPrint('訂單數據總數: ${orderData.length} 個鍵值對');
+      debugPrint('');
+      
+      // 按照類別分組輸出所有欄位
+      debugPrint('【客戶信息】');
+      orderData.keys.where((key) => key.startsWith('customer[')).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
       });
+      debugPrint('');
+      
+      debugPrint('【付款地址】');
+      orderData.keys.where((key) => key.startsWith('payment_address[')).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
+      });
+      debugPrint('');
+      
+      debugPrint('【配送地址】');
+      orderData.keys.where((key) => key.startsWith('shipping_address[')).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
+      });
+      debugPrint('');
+      
+      debugPrint('【付款方式】');
+      orderData.keys.where((key) => key.startsWith('payment_method[')).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
+      });
+      debugPrint('');
+      
+      debugPrint('【配送方式】');
+      orderData.keys.where((key) => key.startsWith('shipping_method[')).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
+      });
+      debugPrint('');
+      
+      debugPrint('【商品信息】');
+      orderData.keys.where((key) => key.startsWith('products[')).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
+      });
+      debugPrint('');
+      
+      debugPrint('【訂單總計】');
+      orderData.keys.where((key) => key.startsWith('totals[')).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
+      });
+      debugPrint('');
+      
+      debugPrint('【其他參數】');
+      orderData.keys.where((key) => 
+        !key.startsWith('customer[') && 
+        !key.startsWith('payment_address[') && 
+        !key.startsWith('shipping_address[') && 
+        !key.startsWith('payment_method[') && 
+        !key.startsWith('shipping_method[') && 
+        !key.startsWith('products[') && 
+        !key.startsWith('totals[')
+      ).forEach((key) {
+        debugPrint('$key = ${orderData[key]}');
+      });
+      
     } catch (e) {
-      // 如果 JSON 轉換失敗，則使用普通方式輸出
-      debugPrint('JSON 轉換失敗: ${e.toString()}');
-      orderData.forEach((key, value) {
-        debugPrint('$key: $value');
-      });
+      debugPrint('輸出訂單數據時發生錯誤: ${e.toString()}');
     }
     
     debugPrint('==================== 訂單數據結束 ====================');
