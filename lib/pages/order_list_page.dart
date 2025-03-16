@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../services/user_service.dart';
 import 'order_detail_page.dart';
+import 'profile_page.dart';
 
 class OrderListPage extends StatefulWidget {
   const OrderListPage({super.key});
@@ -74,6 +75,13 @@ class _OrderListPageState extends State<OrderListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('我的訂單'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // 返回首頁
+            Navigator.of(context).popUntil((route) => route.isFirst);
+          },
+        ),
       ),
       body: _isLoading
         ? const Center(child: CircularProgressIndicator())
@@ -173,6 +181,36 @@ class _OrderListPageState extends State<OrderListPage> {
                   },
                 ),
               ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: 4, // 當前選中的是"我的"
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: '首頁',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.category),
+            label: '分類',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: '購物車',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.favorite),
+            label: '收藏',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: '我的',
+          ),
+        ],
+        onTap: (index) {
+          // 返回首頁，並設置底部導航欄的選中項
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        },
+      ),
     );
   }
   

@@ -4,6 +4,7 @@ import 'dart:convert'; // 添加 dart:convert 導入
 import 'dart:io'; // 添加 dart:io 導入
 import 'package:path_provider/path_provider.dart'; // 添加 path_provider 導入
 import 'package:permission_handler/permission_handler.dart'; // 添加 permission_handler 導入
+import '../pages/order_list_page.dart'; // 添加 OrderListPage 導入
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -831,7 +832,56 @@ class _CheckoutPageState extends State<CheckoutPage> {
       Navigator.of(context, rootNavigator: true).pop();
       
       // 檢查響應
-      if (response.containsKey('success') && response['success'] == true) {
+      if (response.containsKey('message') && 
+          response['message'] is List && 
+          response['message'].isNotEmpty &&
+          response['message'][0].containsKey('msg_status') &&
+          response['message'][0]['msg_status'] == true) {
+        
+        // 獲取訂單ID
+        String orderId = '';
+        if (response.containsKey('order') && response['order'] is Map && response['order'].containsKey('order_id')) {
+          orderId = response['order']['order_id'].toString();
+        } else if (response['message'][0].containsKey('msg')) {
+          // 嘗試從消息中提取訂單ID
+          final msgText = response['message'][0]['msg'].toString();
+          final orderIdMatch = RegExp(r'Order ID: (\d+)').firstMatch(msgText);
+          if (orderIdMatch != null && orderIdMatch.groupCount >= 1) {
+            orderId = orderIdMatch.group(1) ?? '';
+          }
+        }
+        
+        // 訂單提交成功後，清空購物車
+        try {
+          // 顯示清空購物車的加載指示器
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            },
+          );
+          
+          // 遍歷購物車中的所有商品，並移除
+          for (var item in _cartItems) {
+            final cartId = item['cart_id']?.toString() ?? '';
+            if (cartId.isNotEmpty) {
+              await _apiService.removeFromCart(cartId);
+            }
+          }
+          
+          // 關閉清空購物車的加載指示器
+          Navigator.of(context, rootNavigator: true).pop();
+        } catch (e) {
+          // 如果清空購物車失敗，只記錄錯誤，不影響訂單提交成功的流程
+          debugPrint('清空購物車失敗: ${e.toString()}');
+          
+          // 關閉可能存在的加載指示器
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+        
         // 顯示成功對話框
         showDialog(
           context: context,
@@ -839,7 +889,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           builder: (BuildContext context) {
             return AlertDialog(
               title: const Text('訂單提交成功'),
-              content: const Text('您的訂單已成功提交，我們將盡快處理您的訂單。'),
+              content: Text('您的訂單已成功提交，訂單編號: $orderId\n我們將盡快處理您的訂單。'),
               actions: [
                 TextButton(
                   onPressed: () {
@@ -847,6 +897,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     Navigator.of(context).pop();
                     // 返回首頁
                     Navigator.of(context).popUntil((route) => route.isFirst);
+                    // 顯示訂單成功提示
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('訂單 $orderId 已成功建立'),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
                   },
                   child: const Text('確定'),
                 ),
@@ -855,43 +912,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
           },
         );
       } else {
-        // 顯示錯誤信息
-        String errorMessage = '訂單提交失敗';
-        
-        // 獲取狀態碼
-        String statusCode = '';
-        if (response.containsKey('status_code')) {
-          statusCode = '狀態碼: ${response['status_code']}';
-        }
-        
-        // 獲取響應數據
-        String responseData = '';
-        if (response.containsKey('response_data')) {
-          responseData = '響應數據: ${response['response_data']}';
-        }
-        
         // 獲取錯誤消息
-        if (response.containsKey('message') && response['message'] is List && response['message'].isNotEmpty) {
-          errorMessage = response['message'][0]['msg'] ?? errorMessage;
+        String errorMessage = '結帳系統失敗';
+        
+        if (response.containsKey('message') && 
+            response['message'] is List && 
+            response['message'].isNotEmpty &&
+            response['message'][0].containsKey('msg')) {
+          errorMessage = response['message'][0]['msg'].toString();
         }
         
-        // 構建完整錯誤信息
-        String fullErrorMessage = errorMessage;
-        if (statusCode.isNotEmpty) {
-          fullErrorMessage += '\n$statusCode';
-        }
-        if (responseData.isNotEmpty) {
-          fullErrorMessage += '\n$responseData';
-        }
-        
-        // 顯示詳細錯誤對話框
+        // 顯示錯誤對話框
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: const Text('訂單提交失敗'),
+              title: const Text('結帳系統失敗'),
               content: SingleChildScrollView(
-                child: Text(fullErrorMessage),
+                child: Text(errorMessage),
               ),
               actions: [
                 TextButton(
@@ -914,7 +952,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('訂單提交失敗'),
+            title: const Text('結帳系統失敗'),
             content: SingleChildScrollView(
               child: Text('發生錯誤: ${e.toString()}'),
             ),
@@ -1219,19 +1257,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
       debugPrint('最新訂單數據也已寫入: ${latestFile.path}');
       
       // 顯示提示
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('訂單數據已寫入日誌文件'),
-          action: SnackBarAction(
-            label: '查看位置',
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('日誌文件位置: ${logDir.path}')),
-              );
-            },
-          ),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Text('訂單數據已寫入日誌文件'),
+      //     action: SnackBarAction(
+      //       label: '查看位置',
+      //       onPressed: () {
+      //         ScaffoldMessenger.of(context).showSnackBar(
+      //           SnackBar(content: Text('日誌文件位置: ${logDir.path}')),
+      //         );
+      //       },
+      //     ),
+      //   ),
+      // );
     } catch (e) {
       debugPrint('寫入日誌文件時發生錯誤: ${e.toString()}');
       
