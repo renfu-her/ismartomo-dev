@@ -433,7 +433,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
   Widget _buildSelectedAddressDetails() {
     // 格式化地址顯示
     final String fullName = '${_addressData['lastname']} ${_addressData['firstname']}';
-    final String phone = _addressData['cellphone'] ?? '';
     final String zoneName = _getZoneName(_addressData['zone_id'] ?? '');
     final String address1 = _addressData['address_1'] ?? '';
     final String pickupStore = _addressData['pickupstore'] ?? '';
@@ -469,12 +468,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              '電話: $phone',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
             Text(
               '地址: $fullAddress',
               maxLines: 2,
@@ -948,7 +941,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     orderData['customer[email]'] = _customerData['email'] ?? '';
     orderData['customer[telephone]'] = _customerData['telephone'] ?? '';
     orderData['customer[fax]'] = _customerData['fax'] ?? '';
-    orderData['customer[custom_field]'] = ''; // 添加客戶自定義欄位
+    orderData['customer[custom_field]'] = _customerData['custom_field'] ?? '[]';
     
     // 付款地址
     orderData['payment_address[firstname]'] = _addressData['firstname'] ?? '';
