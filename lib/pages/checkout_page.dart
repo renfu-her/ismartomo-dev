@@ -50,6 +50,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
   
   // 固定運費
   final double _shippingFee = 60.0;
+  
+  // 免運費門檻
+  final double _freeShippingThreshold = 1000.0;
 
   @override
   void initState() {
@@ -620,7 +623,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text('運費'),
-                  Text('NT\$${_shippingFee.toInt()}'),
+                  _calculateShippingFee() > 0
+                    ? Text('NT\$${_calculateShippingFee().toInt()}')
+                    : const Text('免運費', style: TextStyle(color: Colors.green)),
                 ],
               ),
             ),
@@ -728,6 +733,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
   
+  double _calculateShippingFee() {
+    // 查找訂單總計
+    double orderTotal = 0.0;
+    for (var total in _totals) {
+      if (total['code'] == 'total') {
+        // 從總計文本中提取數字
+        final String totalText = total['text'] ?? '';
+        final RegExp regex = RegExp(r'[0-9]+');
+        final String numberStr = regex.allMatches(totalText).map((m) => m.group(0)).join();
+        
+        if (numberStr.isNotEmpty) {
+          orderTotal = double.tryParse(numberStr) ?? 0.0;
+        }
+        break;
+      }
+    }
+    
+    // 如果訂單總金額大於等於免運費門檻，則免運費
+    if (orderTotal >= _freeShippingThreshold) {
+      return 0.0;
+    }
+    
+    return _shippingFee;
+  }
+  
   String _calculateFinalTotal() {
     // 查找訂單總計
     double orderTotal = 0.0;
@@ -745,8 +775,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
     }
     
+    // 計算運費
+    final double shippingFee = _calculateShippingFee();
+    
     // 加上運費
-    final double finalTotal = orderTotal + _shippingFee;
+    final double finalTotal = orderTotal + shippingFee;
     
     return 'NT\$${finalTotal.toInt()}';
   }
