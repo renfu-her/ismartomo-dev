@@ -3,6 +3,7 @@ import '../services/api_service.dart';
 import 'dart:convert'; // 添加 dart:convert 導入
 import 'dart:io'; // 添加 dart:io 導入
 import 'package:path_provider/path_provider.dart'; // 添加 path_provider 導入
+import 'package:permission_handler/permission_handler.dart'; // 添加 permission_handler 導入
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -1189,17 +1190,72 @@ class _CheckoutPageState extends State<CheckoutPage> {
     
     // 將日誌內容寫入文件
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/order.log');
-      await file.writeAsString(logContent.toString(), mode: FileMode.append);
+      // 請求存儲權限
+      final status = await Permission.storage.request();
+      if (!status.isGranted) {
+        throw Exception('存儲權限被拒絕');
+      }
+      
+      // 獲取外部存儲目錄
+      final directory = await getExternalStorageDirectory();
+      if (directory == null) {
+        throw Exception('無法獲取外部存儲目錄');
+      }
+      
+      // 創建日誌目錄
+      final logDir = Directory('${directory.path}/logs');
+      if (!await logDir.exists()) {
+        await logDir.create(recursive: true);
+      }
+      
+      // 創建帶時間戳的日誌文件名
+      final now = DateTime.now();
+      final timestamp = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+      final file = File('${logDir.path}/order_$timestamp.log');
+      
+      // 寫入日誌文件
+      await file.writeAsString(logContent.toString());
+      
+      // 同時寫入一個固定名稱的最新日誌文件
+      final latestFile = File('${logDir.path}/order_latest.log');
+      await latestFile.writeAsString(logContent.toString());
+      
       debugPrint('訂單數據已寫入日誌文件: ${file.path}');
+      debugPrint('最新訂單數據也已寫入: ${latestFile.path}');
       
       // 顯示提示
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('訂單數據已寫入日誌文件: ${file.path}')),
+        SnackBar(
+          content: Text('訂單數據已寫入日誌文件'),
+          action: SnackBarAction(
+            label: '查看位置',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('日誌文件位置: ${logDir.path}')),
+              );
+            },
+          ),
+        ),
       );
     } catch (e) {
       debugPrint('寫入日誌文件時發生錯誤: ${e.toString()}');
+      
+      // 如果外部存儲不可用，嘗試使用應用文檔目錄
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/order.log');
+        await file.writeAsString(logContent.toString(), mode: FileMode.append);
+        debugPrint('訂單數據已寫入備用日誌文件: ${file.path}');
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('訂單數據已寫入備用日誌文件: ${file.path}')),
+        );
+      } catch (e2) {
+        debugPrint('寫入備用日誌文件時也發生錯誤: ${e2.toString()}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('無法寫入日誌文件，請檢查應用權限')),
+        );
+      }
     }
     
     return orderData;
