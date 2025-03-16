@@ -65,43 +65,6 @@ class _AddressListPageState extends State<AddressListPage> {
     }
   }
   
-  // 設置默認地址
-  Future<void> _setDefaultAddress(String addressId) async {
-    try {
-      // 獲取用戶ID
-      final userService = Provider.of<UserService>(context, listen: false);
-      final userData = await userService.getUserData();
-      final customerId = userData['customer_id'];
-      
-      if (customerId == null || customerId.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('用戶未登入')),
-        );
-        return;
-      }
-      
-      // 更新地址數據
-      final addressData = {
-        'customer_id': customerId,
-        'default': '1',
-      };
-      
-      // 調用 API 更新地址
-      await _apiService.editCustomerAddress(addressId, addressData);
-      
-      // 重新獲取地址列表
-      await _fetchAddressList();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('已設為默認地址')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('設置默認地址失敗: ${e.toString()}')),
-      );
-    }
-  }
-  
   // 刪除地址
   Future<void> _deleteAddress(String addressId) async {
     try {

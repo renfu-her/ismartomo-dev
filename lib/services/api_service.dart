@@ -826,6 +826,9 @@ class ApiService {
       // 創建 FormData
       final formData = FormData.fromMap(orderData);
       
+      print(formData);
+      print(orderData);
+
       // 發送請求
       final response = await _dio.post(
         url,
@@ -834,10 +837,15 @@ class ApiService {
           contentType: Headers.formUrlEncodedContentType,
           followRedirects: false,
           validateStatus: (status) {
-            return status != null && status < 500;
+            // 允許所有狀態碼通過，以便我們可以捕獲 500 錯誤
+            return true;
           },
         ),
       );
+      
+      // 記錄響應狀態碼和數據
+      debugPrint('訂單提交響應狀態碼: ${response.statusCode}');
+      debugPrint('訂單提交響應數據: ${response.data}');
       
       if (response.statusCode == 200) {
         if (response.data is Map) {
@@ -879,9 +887,48 @@ class ApiService {
           return {'success': true};
         }
       } else {
-        return {'error': true, 'message': [{'msg': '請求失敗: ${response.statusCode}', 'msg_status': false}]};
+        // 處理非 200 狀態碼
+        String errorMessage = '請求失敗: 狀態碼 ${response.statusCode}';
+        String responseData = '';
+        
+        // 嘗試獲取響應數據
+        if (response.data != null) {
+          if (response.data is String) {
+            responseData = response.data.toString();
+          } else if (response.data is Map) {
+            responseData = response.data.toString();
+          } else {
+            responseData = '無法解析的響應數據';
+          }
+        }
+        
+        return {
+          'error': true, 
+          'status_code': response.statusCode,
+          'response_data': responseData,
+          'message': [{'msg': errorMessage, 'msg_status': false}]
+        };
       }
     } catch (e) {
+      // 捕獲並記錄異常
+      debugPrint('訂單提交異常: ${e.toString()}');
+      
+      if (e is DioException) {
+        final dioError = e as DioException;
+        final statusCode = dioError.response?.statusCode;
+        final responseData = dioError.response?.data;
+        
+        debugPrint('DioException 狀態碼: $statusCode');
+        debugPrint('DioException 響應數據: $responseData');
+        
+        return {
+          'error': true,
+          'status_code': statusCode,
+          'response_data': responseData.toString(),
+          'message': [{'msg': '訂單提交失敗: ${e.toString()}', 'msg_status': false}]
+        };
+      }
+      
       return {'error': true, 'message': [{'msg': '訂單提交失敗: ${e.toString()}', 'msg_status': false}]};
     }
   }

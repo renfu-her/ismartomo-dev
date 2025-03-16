@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'dart:convert'; // 添加 dart:convert 導入
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -734,52 +735,39 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
   
   double _calculateShippingFee() {
-    // 查找訂單總計
-    double orderTotal = 0.0;
-    for (var total in _totals) {
-      if (total['code'] == 'total') {
-        // 從總計文本中提取數字
-        final String totalText = total['text'] ?? '';
-        final RegExp regex = RegExp(r'[0-9]+');
-        final String numberStr = regex.allMatches(totalText).map((m) => m.group(0)).join();
-        
-        if (numberStr.isNotEmpty) {
-          orderTotal = double.tryParse(numberStr) ?? 0.0;
-        }
-        break;
-      }
+    // 計算商品小計
+    double subTotal = 0.0;
+    for (var item in _cartItems) {
+      String totalStr = item['total'] ?? '';
+      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double total = double.tryParse(totalStr) ?? 0.0;
+      subTotal += total;
     }
     
-    // 如果訂單總金額大於等於免運費門檻，則免運費
-    if (orderTotal >= _freeShippingThreshold) {
+    // 如果商品小計大於等於免運費門檻，則免運費
+    if (subTotal >= _freeShippingThreshold) {
       return 0.0;
     }
     
-    return _shippingFee;
+    // 否則返回固定運費 60
+    return 60.0;
   }
   
   String _calculateFinalTotal() {
-    // 查找訂單總計
-    double orderTotal = 0.0;
-    for (var total in _totals) {
-      if (total['code'] == 'total') {
-        // 從總計文本中提取數字
-        final String totalText = total['text'] ?? '';
-        final RegExp regex = RegExp(r'[0-9]+');
-        final String numberStr = regex.allMatches(totalText).map((m) => m.group(0)).join();
-        
-        if (numberStr.isNotEmpty) {
-          orderTotal = double.tryParse(numberStr) ?? 0.0;
-        }
-        break;
-      }
+    // 計算商品小計
+    double subTotal = 0.0;
+    for (var item in _cartItems) {
+      String totalStr = item['total'] ?? '';
+      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double total = double.tryParse(totalStr) ?? 0.0;
+      subTotal += total;
     }
     
     // 計算運費
     final double shippingFee = _calculateShippingFee();
     
     // 加上運費
-    final double finalTotal = orderTotal + shippingFee;
+    final double finalTotal = subTotal + shippingFee;
     
     return 'NT\$${finalTotal.toInt()}';
   }
@@ -873,12 +861,52 @@ class _CheckoutPageState extends State<CheckoutPage> {
       } else {
         // 顯示錯誤信息
         String errorMessage = '訂單提交失敗';
+        
+        // 獲取狀態碼
+        String statusCode = '';
+        if (response.containsKey('status_code')) {
+          statusCode = '狀態碼: ${response['status_code']}';
+        }
+        
+        // 獲取響應數據
+        String responseData = '';
+        if (response.containsKey('response_data')) {
+          responseData = '響應數據: ${response['response_data']}';
+        }
+        
+        // 獲取錯誤消息
         if (response.containsKey('message') && response['message'] is List && response['message'].isNotEmpty) {
           errorMessage = response['message'][0]['msg'] ?? errorMessage;
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
+        // 構建完整錯誤信息
+        String fullErrorMessage = errorMessage;
+        if (statusCode.isNotEmpty) {
+          fullErrorMessage += '\n$statusCode';
+        }
+        if (responseData.isNotEmpty) {
+          fullErrorMessage += '\n$responseData';
+        }
+        
+        // 顯示詳細錯誤對話框
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('訂單提交失敗'),
+              content: SingleChildScrollView(
+                child: Text(fullErrorMessage),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('確定'),
+                ),
+              ],
+            );
+          },
         );
       }
     } catch (e) {
@@ -886,8 +914,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
       Navigator.of(context, rootNavigator: true).pop();
       
       // 顯示錯誤信息
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('訂單提交失敗: ${e.toString()}')),
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('訂單提交失敗'),
+            content: SingleChildScrollView(
+              child: Text('發生錯誤: ${e.toString()}'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('確定'),
+              ),
+            ],
+          );
+        },
       );
     }
   }
@@ -904,6 +948,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     orderData['customer[email]'] = _customerData['email'] ?? '';
     orderData['customer[telephone]'] = _customerData['telephone'] ?? '';
     orderData['customer[fax]'] = _customerData['fax'] ?? '';
+    orderData['customer[custom_field]'] = ''; // 添加客戶自定義欄位
     
     // 付款地址
     orderData['payment_address[firstname]'] = _addressData['firstname'] ?? '';
@@ -913,10 +958,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
     orderData['payment_address[address_2]'] = _addressData['address_2'] ?? '';
     orderData['payment_address[city]'] = _addressData['city'] ?? '';
     orderData['payment_address[postcode]'] = _addressData['postcode'] ?? '';
-    orderData['payment_address[zone]'] = _addressData['zone'] ?? '';
+    orderData['payment_address[zone]'] = _getZoneName(_addressData['zone_id'] ?? ''); // 確保設置區域名稱
     orderData['payment_address[zone_id]'] = _addressData['zone_id']?.toString() ?? '';
-    orderData['payment_address[country]'] = _addressData['country'] ?? '';
-    orderData['payment_address[country_id]'] = _addressData['country_id']?.toString() ?? '';
+    orderData['payment_address[country]'] = '台灣'; // 設置國家名稱
+    orderData['payment_address[country_id]'] = '206'; // 台灣的國家ID
+    orderData['payment_address[address_format]'] = '';
+    orderData['payment_address[custom_field][1]'] = _addressData['custom_field'] != null && _addressData['custom_field'] is Map ? _addressData['custom_field']['1'] ?? '711' : '711';
+    
+    // 額外的地址欄位（可能不是標準欄位，但您的系統需要）
+    orderData['payment_address[cellphone]'] = _addressData['cellphone'] ?? '';
+    orderData['payment_address[pickupstore]'] = _addressData['pickupstore'] ?? '';
     
     // 付款方式
     final paymentMethod = _paymentMethods.firstWhere(
@@ -935,15 +986,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
     orderData['shipping_address[address_2]'] = _addressData['address_2'] ?? '';
     orderData['shipping_address[city]'] = _addressData['city'] ?? '';
     orderData['shipping_address[postcode]'] = _addressData['postcode'] ?? '';
-    orderData['shipping_address[zone]'] = _addressData['zone'] ?? '';
+    orderData['shipping_address[zone]'] = _getZoneName(_addressData['zone_id'] ?? ''); // 確保設置區域名稱
     orderData['shipping_address[zone_id]'] = _addressData['zone_id']?.toString() ?? '';
-    orderData['shipping_address[country]'] = _addressData['country'] ?? '';
-    orderData['shipping_address[country_id]'] = _addressData['country_id']?.toString() ?? '';
+    orderData['shipping_address[country]'] = '台灣'; // 設置國家名稱
+    orderData['shipping_address[country_id]'] = '206'; // 台灣的國家ID
+    orderData['shipping_address[address_format]'] = '';
+    orderData['shipping_address[custom_field][1]'] = _addressData['custom_field'] != null && _addressData['custom_field'] is Map ? _addressData['custom_field']['1'] ?? '711' : '711';
+    
+    // 額外的地址欄位（可能不是標準欄位，但您的系統需要）
+    orderData['shipping_address[cellphone]'] = _addressData['cellphone'] ?? '';
+    orderData['shipping_address[pickupstore]'] = _addressData['pickupstore'] ?? '';
     
     // 配送方式
     final shippingFee = _calculateShippingFee();
     orderData['shipping_method[title]'] = shippingFee > 0 ? '運費' : '免運費';
-    orderData['shipping_method[code]'] = 'flat';
+    orderData['shipping_method[code]'] = 'shipping';
     
     // 商品信息
     for (int i = 0; i < _cartItems.length; i++) {
@@ -965,8 +1022,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
       orderData['products[$i][quantity]'] = item['quantity']?.toString() ?? '1';
       orderData['products[$i][price]'] = price.toString();
       orderData['products[$i][total]'] = total.toString();
-      orderData['products[$i][tax_class_id]'] = item['tax_class_id']?.toString() ?? '0';
+      orderData['products[$i][tax_class_id]'] = '0'; // 不使用稅金
+      orderData['products[$i][download]'] = ''; // 添加下載欄位
       orderData['products[$i][subtract]'] = '1';
+      orderData['products[$i][reward]'] = '0'; // 添加獎勵點數欄位
       
       // 處理商品選項
       if (item.containsKey('option') && item['option'] is List) {
@@ -982,59 +1041,68 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
     }
     
-    // 訂單總計
-    double orderTotal = 0.0;
-    for (var total in _totals) {
-      if (total['code'] == 'total') {
-        final String totalText = total['text'] ?? '';
-        final RegExp regex = RegExp(r'[0-9]+');
-        final String numberStr = regex.allMatches(totalText).map((m) => m.group(0)).join();
-        
-        if (numberStr.isNotEmpty) {
-          orderTotal = double.tryParse(numberStr) ?? 0.0;
-        }
-        break;
-      }
+    // 計算商品小計（不含運費）
+    double subTotal = 0.0;
+    for (var item in _cartItems) {
+      String totalStr = item['total'] ?? '';
+      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double total = double.tryParse(totalStr) ?? 0.0;
+      subTotal += total;
     }
     
-    // 計算最終總金額（包含運費）
-    final double finalTotal = orderTotal + _calculateShippingFee();
+    // 計算運費
+    final double shippingFeeValue = _calculateShippingFee();
+    
+    // 計算最終總金額（商品小計 + 運費）
+    final double finalTotal = subTotal + shippingFeeValue;
+    
+    // 設置訂單總金額
     orderData['total'] = finalTotal.toString();
     
-    // 訂單摘要
-    int sortOrder = 1;
-    for (int i = 0; i < _totals.length; i++) {
-      final total = _totals[i];
-      
-      // 提取價格中的數字
-      String valueStr = total['text'] ?? '';
-      valueStr = valueStr.replaceAll(RegExp(r'[^\d.]'), '');
-      double value = double.tryParse(valueStr) ?? 0.0;
-      
-      orderData['totals[$i][code]'] = total['code'] ?? '';
-      orderData['totals[$i][title]'] = total['title'] ?? '';
-      orderData['totals[$i][value]'] = value.toString();
-      orderData['totals[$i][sort_order]'] = (sortOrder++).toString();
-    }
+    // 重新構建訂單摘要，只包含小計、運費和總計
+    // 1. 小計
+    orderData['totals[0][code]'] = 'sub_total';
+    orderData['totals[0][title]'] = '小計';
+    orderData['totals[0][value]'] = subTotal.toString();
+    orderData['totals[0][sort_order]'] = '1';
     
-    // 添加運費到訂單摘要
-    final int shippingIndex = _totals.length;
-    final double shippingFeeValue = _calculateShippingFee();
-    orderData['totals[$shippingIndex][code]'] = 'shipping';
-    orderData['totals[$shippingIndex][title]'] = shippingFeeValue > 0 ? '運費' : '免運費';
-    orderData['totals[$shippingIndex][value]'] = shippingFeeValue.toString();
-    orderData['totals[$shippingIndex][sort_order]'] = (sortOrder++).toString();
+    // 2. 運費
+    orderData['totals[1][code]'] = 'shipping';
+    orderData['totals[1][title]'] = shippingFeeValue > 0 ? '運費' : '免運費';
+    orderData['totals[1][value]'] = shippingFeeValue.toString();
+    orderData['totals[1][sort_order]'] = '2';
     
-    // 添加最終總計到訂單摘要
-    final int totalIndex = _totals.length + 1;
-    orderData['totals[$totalIndex][code]'] = 'total';
-    orderData['totals[$totalIndex][title]'] = '總計';
-    orderData['totals[$totalIndex][value]'] = finalTotal.toString();
-    orderData['totals[$totalIndex][sort_order]'] = (sortOrder++).toString();
+    // 3. 總計
+    orderData['totals[2][code]'] = 'total';
+    orderData['totals[2][title]'] = '總計';
+    orderData['totals[2][value]'] = finalTotal.toString();
+    orderData['totals[2][sort_order]'] = '3';
     
     // 其他必要參數
     orderData['affiliate_id'] = '0';
     orderData['comment'] = '';
+    orderData['vouchers'] = ''; // 添加優惠券欄位
+    
+    // 將完整的 orderData 輸出到調試控制台
+    debugPrint('==================== 訂單數據開始 ====================');
+    
+    // 使用 JsonEncoder 將 orderData 轉換為格式化的 JSON 字符串
+    final JsonEncoder encoder = JsonEncoder.withIndent('  ');
+    try {
+      final String prettyJson = encoder.convert(orderData);
+      // 由於 debugPrint 對長字符串有限制，我們按行分割輸出
+      prettyJson.split('\n').forEach((line) {
+        debugPrint(line);
+      });
+    } catch (e) {
+      // 如果 JSON 轉換失敗，則使用普通方式輸出
+      debugPrint('JSON 轉換失敗: ${e.toString()}');
+      orderData.forEach((key, value) {
+        debugPrint('$key: $value');
+      });
+    }
+    
+    debugPrint('==================== 訂單數據結束 ====================');
     
     return orderData;
   }
