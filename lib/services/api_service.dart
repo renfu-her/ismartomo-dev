@@ -442,6 +442,113 @@ class ApiService {
     }
   }
   
+  // 新增客戶地址
+  Future<Map<String, dynamic>> addCustomerAddress(Map<String, dynamic> addressData) async {
+    try {
+      final customerId = addressData['customer_id'];
+      if (customerId == null || customerId.toString().isEmpty) {
+        throw Exception('用戶ID不能為空');
+      }
+      
+      // 構建 URL
+      final url = '$_baseUrl/gws_customer_address/add&api_key=$_apiKey&customer_id=$customerId';
+      
+      // 創建 FormData
+      final formData = FormData.fromMap(addressData);
+      
+      // 發送請求
+      final response = await _dio.post(
+        url,
+        data: formData,
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) {
+            return status != null && status < 500;
+          },
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else {
+          throw Exception('返回數據格式錯誤');
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('新增地址失敗: ${e.toString()}');
+    }
+  }
+  
+  // 修改客戶地址
+  Future<Map<String, dynamic>> editCustomerAddress(String addressId, Map<String, dynamic> addressData) async {
+    try {
+      final customerId = addressData['customer_id'];
+      if (customerId == null || customerId.toString().isEmpty) {
+        throw Exception('用戶ID不能為空');
+      }
+      
+      if (addressId.isEmpty) {
+        throw Exception('地址ID不能為空');
+      }
+      
+      // 構建 URL
+      final url = '$_baseUrl/gws_customer_address/edit&api_key=$_apiKey&customer_id=$customerId&address_id=$addressId';
+      
+      // 創建 FormData
+      final formData = FormData.fromMap(addressData);
+      
+      // 發送請求
+      final response = await _dio.post(
+        url,
+        data: formData,
+        options: Options(
+          contentType: Headers.formUrlEncodedContentType,
+          followRedirects: false,
+          validateStatus: (status) {
+            return status != null && status < 500;
+          },
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        if (response.data is Map) {
+          return response.data;
+        } else {
+          throw Exception('返回數據格式錯誤');
+        }
+      } else {
+        throw Exception('請求失敗: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('修改地址失敗: ${e.toString()}');
+    }
+  }
+  
+  // 刪除客戶地址
+  Future<Map<String, dynamic>> deleteCustomerAddress(String customerId, String addressId) async {
+    try {
+      if (customerId.isEmpty) {
+        throw Exception('用戶ID不能為空');
+      }
+      
+      if (addressId.isEmpty) {
+        throw Exception('地址ID不能為空');
+      }
+      
+      // 使用 GET 方法刪除地址
+      return _get('gws_customer_address/remove', extraParams: {
+        'customer_id': customerId,
+        'address_id': addressId
+      });
+    } catch (e) {
+      throw Exception('刪除地址失敗: ${e.toString()}');
+    }
+  }
+  
   // 更新會員資料
   Future<Map<String, dynamic>> updateCustomerProfile(String customerId, Map<String, dynamic> data) async {
     try {

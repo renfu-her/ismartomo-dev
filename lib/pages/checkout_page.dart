@@ -304,21 +304,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.error_outline, color: Colors.orange),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Text('尚未設置收件地址，請先在會員中心設置地址'),
+              Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.orange),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Text('尚未設置收件地址，請先新增地址'),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () {
-                  // 導航到會員中心的地址設置頁面
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('請前往會員中心設置地址')),
-                  );
-                },
-                child: const Text('會員中心'),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _showAddAddressDialog();
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('新增地址'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
@@ -350,6 +361,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle, color: Colors.blue),
+                    onPressed: () {
+                      _showAddAddressDialog();
+                    },
+                    tooltip: '新增地址',
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -377,7 +396,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     return DropdownMenuItem<String>(
                       value: addressId,
                       child: Text(
-                        '$fullName - $zoneName',
+                        '$fullName - $zoneName $addressText',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -389,7 +408,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                         _selectedAddressId = newValue;
                         // 更新選中的地址數據
                         _addressData = _addressList.firstWhere(
-                          (address) => address['address_id'].toString() == newValue,
+                          (address) => address['address_id'] != null && address['address_id'].toString() == newValue,
                           orElse: () => <String, dynamic>{},
                         );
                       });
@@ -401,8 +420,36 @@ class _CheckoutPageState extends State<CheckoutPage> {
               const SizedBox(height: 16),
               
               // 顯示選中地址的詳細信息
-              if (_selectedAddressId != null)
+              if (_selectedAddressId != null) ...[
                 _buildSelectedAddressDetails(),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () {
+                        _showEditAddressDialog(_addressData);
+                      },
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('修改'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton.icon(
+                      onPressed: () {
+                        _showDeleteAddressConfirmation(_addressData);
+                      },
+                      icon: const Icon(Icons.delete, size: 18),
+                      label: const Text('刪除'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),
@@ -410,7 +457,672 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
     
     // 只有一個地址時直接顯示
-    return _buildSelectedAddressDetails();
+    return Column(
+      children: [
+        _buildSelectedAddressDetails(),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton.icon(
+              onPressed: () {
+                _showAddAddressDialog();
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('新增'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.green,
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: () {
+                _showEditAddressDialog(_addressData);
+              },
+              icon: const Icon(Icons.edit, size: 18),
+              label: const Text('修改'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              onPressed: () {
+                _showDeleteAddressConfirmation(_addressData);
+              },
+              icon: const Icon(Icons.delete, size: 18),
+              label: const Text('刪除'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+  
+  // 顯示新增地址對話框
+  Future<void> _showAddAddressDialog() async {
+    // 獲取區域列表
+    List<Map<String, dynamic>> zones = [];
+    try {
+      final response = await _apiService.getZones('206'); // 台灣的 country_id 是 206
+      if (response.containsKey('zones') && response['zones'] is List) {
+        zones = List<Map<String, dynamic>>.from(response['zones']);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('獲取區域列表失敗: ${e.toString()}')),
+      );
+      return;
+    }
+    
+    if (zones.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('無法獲取區域列表，請稍後再試')),
+      );
+      return;
+    }
+    
+    // 初始化控制器
+    final firstNameController = TextEditingController();
+    final lastNameController = TextEditingController();
+    final cellphoneController = TextEditingController();
+    final postcodeController = TextEditingController();
+    final cityController = TextEditingController();
+    final address1Controller = TextEditingController();
+    final address2Controller = TextEditingController();
+    
+    // 默認選擇台北市
+    String selectedZoneId = '3136';
+    bool isDefault = false;
+    
+    // 顯示對話框
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('新增地址'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 姓名
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: lastNameController,
+                            decoration: const InputDecoration(
+                              labelText: '姓氏*',
+                              hintText: '例：王',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: firstNameController,
+                            decoration: const InputDecoration(
+                              labelText: '名字*',
+                              hintText: '例：小明',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    // 手機號碼
+                    TextField(
+                      controller: cellphoneController,
+                      decoration: const InputDecoration(
+                        labelText: '手機號碼*',
+                        hintText: '例：0912345678',
+                      ),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    
+                    // 縣市選擇
+                    DropdownButtonFormField<String>(
+                      value: selectedZoneId,
+                      decoration: const InputDecoration(
+                        labelText: '縣市*',
+                      ),
+                      items: zones.map((zone) {
+                        return DropdownMenuItem<String>(
+                          value: zone['zone_id'].toString(),
+                          child: Text(zone['name']),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedZoneId = newValue;
+                          });
+                        }
+                      },
+                    ),
+                    
+                    // 郵遞區號
+                    TextField(
+                      controller: postcodeController,
+                      decoration: const InputDecoration(
+                        labelText: '郵遞區號*',
+                        hintText: '例：100',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    
+                    // 鄉鎮市區
+                    TextField(
+                      controller: cityController,
+                      decoration: const InputDecoration(
+                        labelText: '鄉鎮市區*',
+                        hintText: '例：中正區',
+                      ),
+                    ),
+                    
+                    // 地址
+                    TextField(
+                      controller: address1Controller,
+                      decoration: const InputDecoration(
+                        labelText: '詳細地址*',
+                        hintText: '例：忠孝東路一段100號',
+                      ),
+                    ),
+                    
+                    // 地址2（選填）
+                    TextField(
+                      controller: address2Controller,
+                      decoration: const InputDecoration(
+                        labelText: '補充地址（選填）',
+                        hintText: '例：5樓',
+                      ),
+                    ),
+                    
+                    // 設為默認地址
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isDefault,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              isDefault = value ?? false;
+                            });
+                          },
+                        ),
+                        const Text('設為默認地址'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('取消'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    // 驗證必填欄位
+                    if (firstNameController.text.trim().isEmpty ||
+                        lastNameController.text.trim().isEmpty ||
+                        cellphoneController.text.trim().isEmpty ||
+                        postcodeController.text.trim().isEmpty ||
+                        cityController.text.trim().isEmpty ||
+                        address1Controller.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('請填寫所有必填欄位')),
+                      );
+                      return;
+                    }
+                    
+                    // 關閉對話框
+                    Navigator.of(context).pop();
+                    
+                    // 顯示加載指示器
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      },
+                    );
+                    
+                    try {
+                      // 準備地址數據
+                      final addressData = {
+                        'customer_id': _customerData['customer_id'] != null ? _customerData['customer_id'].toString() : '',
+                        'firstname': firstNameController.text.trim(),
+                        'lastname': lastNameController.text.trim(),
+                        'company': '',
+                        'address_1': address1Controller.text.trim(),
+                        'address_2': address2Controller.text.trim(),
+                        'city': cityController.text.trim(),
+                        'postcode': postcodeController.text.trim(),
+                        'country_id': '206', // 台灣
+                        'zone_id': selectedZoneId,
+                        'default': isDefault ? '1' : '0',
+                        'custom_field[1]': '711',
+                        'cellphone': cellphoneController.text.trim(),
+                      };
+                      
+                      // 調用 API 新增地址
+                      final response = await _apiService.addCustomerAddress(addressData);
+                      
+                      // 關閉加載指示器
+                      Navigator.of(context, rootNavigator: true).pop();
+                      
+                      // 檢查是否成功
+                      if (response.containsKey('success') && response['success'] == true) {
+                        // 重新獲取地址列表
+                        await _fetchData();
+                        
+                        // 顯示成功消息
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('地址新增成功')),
+                        );
+                      } else {
+                        // 顯示錯誤消息
+                        String errorMsg = '地址新增失敗';
+                        if (response.containsKey('message') && 
+                            response['message'] is List && 
+                            response['message'].isNotEmpty) {
+                          errorMsg = response['message'][0]['msg'] ?? errorMsg;
+                        }
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(errorMsg)),
+                        );
+                      }
+                    } catch (e) {
+                      // 關閉加載指示器
+                      Navigator.of(context, rootNavigator: true).pop();
+                      
+                      // 顯示錯誤消息
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('地址新增失敗: ${e.toString()}')),
+                      );
+                    }
+                  },
+                  child: const Text('保存'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  
+  // 顯示編輯地址對話框
+  Future<void> _showEditAddressDialog(Map<String, dynamic> address) async {
+    // 獲取區域列表
+    List<Map<String, dynamic>> zones = [];
+    try {
+      final response = await _apiService.getZones('206'); // 台灣的 country_id 是 206
+      if (response.containsKey('zones') && response['zones'] is List) {
+        zones = List<Map<String, dynamic>>.from(response['zones']);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('獲取區域列表失敗: ${e.toString()}')),
+      );
+      return;
+    }
+    
+    if (zones.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('無法獲取區域列表，請稍後再試')),
+      );
+      return;
+    }
+    
+    // 初始化控制器並填充現有數據
+    final firstNameController = TextEditingController(text: address['firstname'] ?? '');
+    final lastNameController = TextEditingController(text: address['lastname'] ?? '');
+    final cellphoneController = TextEditingController(text: address['cellphone'] ?? '');
+    final postcodeController = TextEditingController(text: address['postcode'] ?? '');
+    final cityController = TextEditingController(text: address['city'] ?? '');
+    final address1Controller = TextEditingController(text: address['address_1'] ?? '');
+    final address2Controller = TextEditingController(text: address['address_2'] ?? '');
+    
+    // 獲取當前選擇的區域 ID
+    String selectedZoneId = address['zone_id']?.toString() ?? '3136';
+    bool isDefault = address['default'] == true;
+    
+    // 顯示對話框
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('編輯地址'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 姓名
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: lastNameController,
+                            decoration: const InputDecoration(
+                              labelText: '姓氏*',
+                              hintText: '例：王',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: firstNameController,
+                            decoration: const InputDecoration(
+                              labelText: '名字*',
+                              hintText: '例：小明',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    // 手機號碼
+                    TextField(
+                      controller: cellphoneController,
+                      decoration: const InputDecoration(
+                        labelText: '手機號碼*',
+                        hintText: '例：0912345678',
+                      ),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    
+                    // 縣市選擇
+                    DropdownButtonFormField<String>(
+                      value: selectedZoneId,
+                      decoration: const InputDecoration(
+                        labelText: '縣市*',
+                      ),
+                      items: zones.map((zone) {
+                        return DropdownMenuItem<String>(
+                          value: zone['zone_id'].toString(),
+                          child: Text(zone['name']),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedZoneId = newValue;
+                          });
+                        }
+                      },
+                    ),
+                    
+                    // 郵遞區號
+                    TextField(
+                      controller: postcodeController,
+                      decoration: const InputDecoration(
+                        labelText: '郵遞區號*',
+                        hintText: '例：100',
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    
+                    // 鄉鎮市區
+                    TextField(
+                      controller: cityController,
+                      decoration: const InputDecoration(
+                        labelText: '鄉鎮市區*',
+                        hintText: '例：中正區',
+                      ),
+                    ),
+                    
+                    // 地址
+                    TextField(
+                      controller: address1Controller,
+                      decoration: const InputDecoration(
+                        labelText: '詳細地址*',
+                        hintText: '例：忠孝東路一段100號',
+                      ),
+                    ),
+                    
+                    // 地址2（選填）
+                    TextField(
+                      controller: address2Controller,
+                      decoration: const InputDecoration(
+                        labelText: '補充地址（選填）',
+                        hintText: '例：5樓',
+                      ),
+                    ),
+                    
+                    // 設為默認地址
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isDefault,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              isDefault = value ?? false;
+                            });
+                          },
+                        ),
+                        const Text('設為默認地址'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('取消'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    // 驗證必填欄位
+                    if (firstNameController.text.trim().isEmpty ||
+                        lastNameController.text.trim().isEmpty ||
+                        cellphoneController.text.trim().isEmpty ||
+                        postcodeController.text.trim().isEmpty ||
+                        cityController.text.trim().isEmpty ||
+                        address1Controller.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('請填寫所有必填欄位')),
+                      );
+                      return;
+                    }
+                    
+                    // 關閉對話框
+                    Navigator.of(context).pop();
+                    
+                    // 顯示加載指示器
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (BuildContext context) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      },
+                    );
+                    
+                    try {
+                      // 準備地址數據
+                      final addressData = {
+                        'customer_id': _customerData['customer_id'] != null ? _customerData['customer_id'].toString() : '',
+                        'firstname': firstNameController.text.trim(),
+                        'lastname': lastNameController.text.trim(),
+                        'company': '',
+                        'address_1': address1Controller.text.trim(),
+                        'address_2': address2Controller.text.trim(),
+                        'city': cityController.text.trim(),
+                        'postcode': postcodeController.text.trim(),
+                        'country_id': '206', // 台灣
+                        'zone_id': selectedZoneId,
+                        'default': isDefault ? '1' : '0',
+                        'custom_field[1]': '711',
+                        'cellphone': cellphoneController.text.trim(),
+                      };
+                      
+                      // 調用 API 修改地址
+                      final response = await _apiService.editCustomerAddress(
+                        address['address_id'] != null ? address['address_id'].toString() : '',
+                        addressData,
+                      );
+                      
+                      // 關閉加載指示器
+                      Navigator.of(context, rootNavigator: true).pop();
+                      
+                      // 檢查是否成功
+                      if (response.containsKey('success') && response['success'] == true) {
+                        // 重新獲取地址列表
+                        await _fetchData();
+                        
+                        // 顯示成功消息
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('地址修改成功')),
+                        );
+                      } else {
+                        // 顯示錯誤消息
+                        String errorMsg = '地址修改失敗';
+                        if (response.containsKey('message') && 
+                            response['message'] is List && 
+                            response['message'].isNotEmpty) {
+                          errorMsg = response['message'][0]['msg'] ?? errorMsg;
+                        }
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(errorMsg)),
+                        );
+                      }
+                    } catch (e) {
+                      // 關閉加載指示器
+                      Navigator.of(context, rootNavigator: true).pop();
+                      
+                      // 顯示錯誤消息
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('地址修改失敗: ${e.toString()}')),
+                      );
+                    }
+                  },
+                  child: const Text('保存'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+  
+  // 顯示刪除地址確認對話框
+  Future<void> _showDeleteAddressConfirmation(Map<String, dynamic> address) async {
+    // 如果只有一個地址，不允許刪除
+    if (_addressList.length <= 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('至少需要保留一個地址，無法刪除')),
+      );
+      return;
+    }
+    
+    // 顯示確認對話框
+    bool confirmDelete = await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('確認刪除'),
+          content: const Text('確定要刪除此地址嗎？此操作無法撤銷。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('確定刪除'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+            ),
+          ],
+        );
+      },
+    ) ?? false;
+    
+    if (!confirmDelete) {
+      return;
+    }
+    
+    // 顯示加載指示器
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+    
+    try {
+      // 調用 API 刪除地址
+      final customerId = _customerData['customer_id'] != null ? _customerData['customer_id'].toString() : '';
+      final addressId = address['address_id'] != null ? address['address_id'].toString() : '';
+      
+      // 顯示調試信息
+      debugPrint('刪除地址: customer_id=$customerId, address_id=$addressId');
+      
+      final response = await _apiService.deleteCustomerAddress(
+        customerId,
+        addressId,
+      );
+      
+      // 關閉加載指示器
+      Navigator.of(context, rootNavigator: true).pop();
+      
+      // 檢查是否成功
+      if (response.containsKey('success') && response['success'] == true) {
+        // 重新獲取地址列表
+        await _fetchData();
+        
+        // 顯示成功消息
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('地址刪除成功')),
+        );
+      } else {
+        // 顯示錯誤消息
+        String errorMsg = '地址刪除失敗';
+        if (response.containsKey('message') && 
+            response['message'] is List && 
+            response['message'].isNotEmpty) {
+          errorMsg = response['message'][0]['msg'] ?? errorMsg;
+        } else if (response.containsKey('error') && response['error'] == true) {
+          errorMsg = '刪除失敗，請稍後再試';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
+    } catch (e) {
+      // 關閉加載指示器
+      Navigator.of(context, rootNavigator: true).pop();
+      
+      // 顯示錯誤消息
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('地址刪除失敗: ${e.toString()}')),
+      );
+    }
   }
   
   // 顯示選中的地址詳情
