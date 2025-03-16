@@ -831,42 +831,211 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
     
     try {
-      // 模擬訂單提交過程
-      await Future.delayed(const Duration(seconds: 2));
+      // 構建訂單數據
+      final Map<String, dynamic> orderData = await _buildOrderData();
+      
+      // 獲取用戶 ID
+      final customerId = _customerData['customer_id']?.toString();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('無法獲取用戶 ID');
+      }
+      
+      // 發送 API 請求
+      final response = await _apiService.createOrder(customerId, orderData);
       
       // 關閉加載指示器
       Navigator.of(context, rootNavigator: true).pop();
       
-      // 顯示成功對話框
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('訂單提交成功'),
-            content: const Text('您的訂單已成功提交，我們將盡快處理您的訂單。'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  // 關閉對話框
-                  Navigator.of(context).pop();
-                  // 返回首頁
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                },
-                child: const Text('確定'),
-              ),
-            ],
-          );
-        },
-      );
+      // 檢查響應
+      if (response.containsKey('success') && response['success'] == true) {
+        // 顯示成功對話框
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('訂單提交成功'),
+              content: const Text('您的訂單已成功提交，我們將盡快處理您的訂單。'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    // 關閉對話框
+                    Navigator.of(context).pop();
+                    // 返回首頁
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  child: const Text('確定'),
+                ),
+              ],
+            );
+          },
+        );
+      } else {
+        // 顯示錯誤信息
+        String errorMessage = '訂單提交失敗';
+        if (response.containsKey('message') && response['message'] is List && response['message'].isNotEmpty) {
+          errorMessage = response['message'][0]['msg'] ?? errorMessage;
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
     } catch (e) {
       // 關閉加載指示器
       Navigator.of(context, rootNavigator: true).pop();
       
-      // 顯示錯誤消息
+      // 顯示錯誤信息
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('訂單提交失敗: ${e.toString()}')),
       );
     }
+  }
+  
+  // 構建訂單數據
+  Future<Map<String, dynamic>> _buildOrderData() async {
+    final Map<String, dynamic> orderData = {};
+    
+    // 客戶信息
+    orderData['customer[customer_id]'] = _customerData['customer_id']?.toString() ?? '';
+    orderData['customer[customer_group_id]'] = _customerData['customer_group_id']?.toString() ?? '1';
+    orderData['customer[firstname]'] = _customerData['firstname'] ?? '';
+    orderData['customer[lastname]'] = _customerData['lastname'] ?? '';
+    orderData['customer[email]'] = _customerData['email'] ?? '';
+    orderData['customer[telephone]'] = _customerData['telephone'] ?? '';
+    orderData['customer[fax]'] = _customerData['fax'] ?? '';
+    
+    // 付款地址
+    orderData['payment_address[firstname]'] = _addressData['firstname'] ?? '';
+    orderData['payment_address[lastname]'] = _addressData['lastname'] ?? '';
+    orderData['payment_address[company]'] = _addressData['company'] ?? '';
+    orderData['payment_address[address_1]'] = _addressData['address_1'] ?? '';
+    orderData['payment_address[address_2]'] = _addressData['address_2'] ?? '';
+    orderData['payment_address[city]'] = _addressData['city'] ?? '';
+    orderData['payment_address[postcode]'] = _addressData['postcode'] ?? '';
+    orderData['payment_address[zone]'] = _addressData['zone'] ?? '';
+    orderData['payment_address[zone_id]'] = _addressData['zone_id']?.toString() ?? '';
+    orderData['payment_address[country]'] = _addressData['country'] ?? '';
+    orderData['payment_address[country_id]'] = _addressData['country_id']?.toString() ?? '';
+    
+    // 付款方式
+    final paymentMethod = _paymentMethods.firstWhere(
+      (method) => method['code'] == _selectedPaymentMethod,
+      orElse: () => _paymentMethods.first,
+    );
+    
+    orderData['payment_method[title]'] = paymentMethod['title'] ?? '';
+    orderData['payment_method[code]'] = paymentMethod['code'] ?? '';
+    
+    // 配送地址（與付款地址相同）
+    orderData['shipping_address[firstname]'] = _addressData['firstname'] ?? '';
+    orderData['shipping_address[lastname]'] = _addressData['lastname'] ?? '';
+    orderData['shipping_address[company]'] = _addressData['company'] ?? '';
+    orderData['shipping_address[address_1]'] = _addressData['address_1'] ?? '';
+    orderData['shipping_address[address_2]'] = _addressData['address_2'] ?? '';
+    orderData['shipping_address[city]'] = _addressData['city'] ?? '';
+    orderData['shipping_address[postcode]'] = _addressData['postcode'] ?? '';
+    orderData['shipping_address[zone]'] = _addressData['zone'] ?? '';
+    orderData['shipping_address[zone_id]'] = _addressData['zone_id']?.toString() ?? '';
+    orderData['shipping_address[country]'] = _addressData['country'] ?? '';
+    orderData['shipping_address[country_id]'] = _addressData['country_id']?.toString() ?? '';
+    
+    // 配送方式
+    final shippingFee = _calculateShippingFee();
+    orderData['shipping_method[title]'] = shippingFee > 0 ? '運費' : '免運費';
+    orderData['shipping_method[code]'] = 'flat';
+    
+    // 商品信息
+    for (int i = 0; i < _cartItems.length; i++) {
+      final item = _cartItems[i];
+      
+      // 提取價格中的數字
+      String priceStr = item['price'] ?? '';
+      priceStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double price = double.tryParse(priceStr) ?? 0.0;
+      
+      // 提取總價中的數字
+      String totalStr = item['total'] ?? '';
+      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double total = double.tryParse(totalStr) ?? 0.0;
+      
+      orderData['products[$i][product_id]'] = item['product_id']?.toString() ?? '';
+      orderData['products[$i][name]'] = item['name'] ?? '';
+      orderData['products[$i][model]'] = item['model'] ?? '';
+      orderData['products[$i][quantity]'] = item['quantity']?.toString() ?? '1';
+      orderData['products[$i][price]'] = price.toString();
+      orderData['products[$i][total]'] = total.toString();
+      orderData['products[$i][tax_class_id]'] = item['tax_class_id']?.toString() ?? '0';
+      orderData['products[$i][subtract]'] = '1';
+      
+      // 處理商品選項
+      if (item.containsKey('option') && item['option'] is List) {
+        final options = item['option'];
+        for (int j = 0; j < options.length; j++) {
+          final option = options[j];
+          orderData['products[$i][option][$j][product_option_id]'] = option['product_option_id']?.toString() ?? '';
+          orderData['products[$i][option][$j][product_option_value_id]'] = option['product_option_value_id']?.toString() ?? '';
+          orderData['products[$i][option][$j][name]'] = option['name'] ?? '';
+          orderData['products[$i][option][$j][value]'] = option['value'] ?? '';
+          orderData['products[$i][option][$j][type]'] = option['type'] ?? '';
+        }
+      }
+    }
+    
+    // 訂單總計
+    double orderTotal = 0.0;
+    for (var total in _totals) {
+      if (total['code'] == 'total') {
+        final String totalText = total['text'] ?? '';
+        final RegExp regex = RegExp(r'[0-9]+');
+        final String numberStr = regex.allMatches(totalText).map((m) => m.group(0)).join();
+        
+        if (numberStr.isNotEmpty) {
+          orderTotal = double.tryParse(numberStr) ?? 0.0;
+        }
+        break;
+      }
+    }
+    
+    // 計算最終總金額（包含運費）
+    final double finalTotal = orderTotal + _calculateShippingFee();
+    orderData['total'] = finalTotal.toString();
+    
+    // 訂單摘要
+    int sortOrder = 1;
+    for (int i = 0; i < _totals.length; i++) {
+      final total = _totals[i];
+      
+      // 提取價格中的數字
+      String valueStr = total['text'] ?? '';
+      valueStr = valueStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double value = double.tryParse(valueStr) ?? 0.0;
+      
+      orderData['totals[$i][code]'] = total['code'] ?? '';
+      orderData['totals[$i][title]'] = total['title'] ?? '';
+      orderData['totals[$i][value]'] = value.toString();
+      orderData['totals[$i][sort_order]'] = (sortOrder++).toString();
+    }
+    
+    // 添加運費到訂單摘要
+    final int shippingIndex = _totals.length;
+    final double shippingFeeValue = _calculateShippingFee();
+    orderData['totals[$shippingIndex][code]'] = 'shipping';
+    orderData['totals[$shippingIndex][title]'] = shippingFeeValue > 0 ? '運費' : '免運費';
+    orderData['totals[$shippingIndex][value]'] = shippingFeeValue.toString();
+    orderData['totals[$shippingIndex][sort_order]'] = (sortOrder++).toString();
+    
+    // 添加最終總計到訂單摘要
+    final int totalIndex = _totals.length + 1;
+    orderData['totals[$totalIndex][code]'] = 'total';
+    orderData['totals[$totalIndex][title]'] = '總計';
+    orderData['totals[$totalIndex][value]'] = finalTotal.toString();
+    orderData['totals[$totalIndex][sort_order]'] = (sortOrder++).toString();
+    
+    // 其他必要參數
+    orderData['affiliate_id'] = '0';
+    orderData['comment'] = '';
+    
+    return orderData;
   }
 } 
