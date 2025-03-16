@@ -777,4 +777,39 @@ class ApiService {
       throw Exception('從購物車移除商品失敗: ${e.toString()}');
     }
   }
+  
+  // 獲取客戶訂單列表
+  Future<Map<String, dynamic>> getCustomerOrders(String customerId) async {
+    try {
+      if (customerId.isEmpty) {
+        throw Exception('用戶ID不能為空');
+      }
+      
+      final response = await _get('gws_customer_order', extraParams: {'customer_id': customerId});
+      return response;
+    } catch (e) {
+      throw Exception('獲取訂單列表失敗: ${e.toString()}');
+    }
+  }
+  
+  // 獲取訂單詳情
+  Future<Map<String, dynamic>> getOrderDetail(String customerId, String orderId) async {
+    try {
+      if (customerId.isEmpty) {
+        throw Exception('用戶ID不能為空');
+      }
+      
+      if (orderId.isEmpty) {
+        throw Exception('訂單ID不能為空');
+      }
+      
+      final response = await _get('gws_appcustomer_order/info', extraParams: {
+        'customer_id': customerId,
+        'order_id': orderId
+      });
+      return response;
+    } catch (e) {
+      throw Exception('獲取訂單詳情失敗: ${e.toString()}');
+    }
+  }
 } 

@@ -6,6 +6,7 @@ import 'register_page.dart';
 import 'information_page.dart';
 import 'customer_profile_page.dart';
 import 'address_list_page.dart';
+import 'order_list_page.dart';
 import '../services/api_service.dart';
 import '../services/user_service.dart';
 
@@ -412,9 +413,25 @@ class _ProfilePageState extends State<ProfilePage> {
                         );
                         break;
                       case '我的訂單':
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('訂單功能待實現')),
-                        );
+                        // 檢查用戶是否已登入
+                        final userService = Provider.of<UserService>(context, listen: false);
+                        if (userService.isLoggedIn) {
+                          // 導航到訂單列表頁面
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const OrderListPage()),
+                          );
+                        } else {
+                          // 提示用戶登入
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('請先登入會員')),
+                          );
+                          // 導航到登入頁面
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginPage()),
+                          );
+                        }
                         break;
                       case '收貨地址':
                         // 檢查用戶是否已登入

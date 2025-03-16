@@ -205,6 +205,11 @@ class UserService extends ChangeNotifier {
     }
   }
   
+  // 獲取用戶 ID (為了與 ApiService 中的方法名稱保持一致)
+  Future<String?> getCustomerId() async {
+    return getUserId();
+  }
+  
   // 登出功能
   Future<bool> logout() async {
     try {
