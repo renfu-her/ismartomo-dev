@@ -46,7 +46,7 @@ class _CustomerProfilePageState extends State<CustomerProfilePage> {
       }
 
       // 獲取會員資料
-      final response = await _apiService.getCustomerProfile(customerId);
+      final response = await _apiService.getCustomerProfile();
       
       setState(() {
         _isLoading = false;

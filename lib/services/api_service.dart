@@ -397,12 +397,48 @@ class ApiService {
   }
   
   // 獲取會員資料
-  Future<Map<String, dynamic>> getCustomerProfile(String customerId) async {
+  Future<Map<String, dynamic>> getCustomerProfile() async {
     try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('用戶未登入');
+      }
+      
       final response = await _get('gws_customer&customer_id=$customerId');
       return response;
     } catch (e) {
       rethrow;
+    }
+  }
+  
+  // 獲取客戶地址
+  Future<Map<String, dynamic>> getCustomerAddress(String addressId) async {
+    try {
+      // 獲取用戶 ID
+      final customerId = await _getCustomerId();
+      if (customerId == null || customerId.isEmpty) {
+        throw Exception('用戶未登入');
+      }
+      
+      final response = await _get('gws_appcustomer_address&customer_id=$customerId&address_id=$addressId');
+      return response;
+    } catch (e) {
+      throw Exception('獲取地址失敗: ${e.toString()}');
+    }
+  }
+  
+  // 獲取客戶所有地址
+  Future<Map<String, dynamic>> getCustomerAddressList(String customerId) async {
+    try {
+      if (customerId.isEmpty) {
+        throw Exception('用戶ID不能為空');
+      }
+      
+      final response = await _get('gws_appcustomer_address&customer_id=$customerId');
+      return response;
+    } catch (e) {
+      throw Exception('獲取地址列表失敗: ${e.toString()}');
     }
   }
   

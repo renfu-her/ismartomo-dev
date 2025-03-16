@@ -127,14 +127,19 @@ class _FavoritePageState extends State<FavoritePage> {
                 children: [
                   Text(
                     _errorMessage,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _fetchFavoriteProducts,
-                    child: const Text('重試'),
-                  ),
+                  if (_errorMessage != '請先登入以查看收藏')
+                    ElevatedButton(
+                      onPressed: _fetchFavoriteProducts,
+                      child: const Text('重試'),
+                    ),
                   if (_errorMessage == '請先登入以查看收藏')
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0),
@@ -142,6 +147,10 @@ class _FavoritePageState extends State<FavoritePage> {
                         onPressed: () {
                           Navigator.of(context).pushNamed('/login');
                         },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                          textStyle: const TextStyle(fontSize: 18),
+                        ),
                         child: const Text('前往登入'),
                       ),
                     ),
@@ -155,14 +164,14 @@ class _FavoritePageState extends State<FavoritePage> {
                   children: [
                     const FaIcon(FontAwesomeIcons.heart, size: 80, color: Colors.grey),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       '您的收藏列表是空的',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
+                    Text(
                       '瀏覽商品並點擊愛心圖標來添加收藏',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
@@ -170,6 +179,10 @@ class _FavoritePageState extends State<FavoritePage> {
                         // 返回首頁
                         Navigator.of(context).popUntil((route) => route.isFirst);
                       },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        textStyle: const TextStyle(fontSize: 18),
+                      ),
                       child: const Text('瀏覽商品'),
                     ),
                   ],

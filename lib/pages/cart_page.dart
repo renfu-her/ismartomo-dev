@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../services/api_service.dart';
+import 'checkout_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -49,7 +50,14 @@ class _CartPageState extends State<CartPage> {
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _errorMessage = '獲取購物車數據失敗: ${e.toString()}';
+        // 檢查錯誤信息是否包含「用戶未登入」
+        if (e.toString().contains('用戶未登入')) {
+          _cartItems = [];
+          _totals = [];
+          _errorMessage = '購物車為空';
+        } else {
+          _errorMessage = '獲取購物車數據失敗: ${e.toString()}';
+        }
       });
     }
   }
@@ -272,10 +280,15 @@ class _CartPageState extends State<CartPage> {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                // 結帳功能
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('結帳功能待實現')),
-                );
+                // 導航到結帳頁面
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const CheckoutPage(),
+                  ),
+                ).then((_) {
+                  // 從結帳頁面返回後刷新購物車數據
+                  _fetchCartData();
+                });
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
