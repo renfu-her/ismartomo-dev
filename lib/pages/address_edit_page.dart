@@ -22,7 +22,6 @@ class _AddressEditPageState extends State<AddressEditPage> {
   
   final TextEditingController _firstnameController = TextEditingController();
   final TextEditingController _lastnameController = TextEditingController();
-  final TextEditingController _cellphoneController = TextEditingController();
   final TextEditingController _address1Controller = TextEditingController();
   final TextEditingController _address2Controller = TextEditingController();
   
@@ -68,7 +67,6 @@ class _AddressEditPageState extends State<AddressEditPage> {
   void dispose() {
     _firstnameController.dispose();
     _lastnameController.dispose();
-    _cellphoneController.dispose();
     _address1Controller.dispose();
     _address2Controller.dispose();
     super.dispose();
@@ -106,7 +104,6 @@ class _AddressEditPageState extends State<AddressEditPage> {
         // 填充表單
         _firstnameController.text = address['firstname'] ?? '';
         _lastnameController.text = address['lastname'] ?? '';
-        _cellphoneController.text = address['cellphone'] ?? '';
         _address1Controller.text = address['address_1'] ?? '';
         _address2Controller.text = address['address_2'] ?? '';
         
@@ -166,7 +163,7 @@ class _AddressEditPageState extends State<AddressEditPage> {
         'customer_id': customerId,
         'firstname': _firstnameController.text,
         'lastname': _lastnameController.text,
-        'cellphone': _cellphoneController.text,
+        'cellphone': '', // 設置為空字符串
         'company': '',
         'address_1': _address1Controller.text,
         'address_2': _address2Controller.text,
@@ -257,23 +254,6 @@ class _AddressEditPageState extends State<AddressEditPage> {
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // 手機號碼
-                    TextFormField(
-                      controller: _cellphoneController,
-                      decoration: const InputDecoration(
-                        labelText: '手機號碼',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return '請輸入手機號碼';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 16),
                     

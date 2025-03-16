@@ -15,7 +15,6 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:html/parser.dart' show parse;
 
 // 全局 SharedPreferences 實例
 late SharedPreferences prefs;
@@ -199,15 +198,6 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final ApiService _apiService = ApiService();
   int _currentIndex = 0;
-  bool _isLoading = true;
-  String _errorMessage = '';
-  
-  // 橫幅數據
-  List<Map<String, dynamic>> _banners = [];
-  
-  // 產品數據
-  List<dynamic> _latestProducts = [];
-  List<dynamic> _popularProducts = [];
   
   // 商城設定
   String? _logoUrl;
@@ -225,7 +215,6 @@ class _HomePageState extends State<HomePage> {
       const FavoritePage(),
       const ProfilePage(),
     ];
-    _fetchHomeData();
     _fetchStoreSettings();
   }
   
@@ -243,54 +232,6 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       // 處理錯誤，但不顯示錯誤消息，因為這不是關鍵功能
       print('獲取商城設定失敗: ${e.toString()}');
-    }
-  }
-  
-  Future<void> _fetchHomeData() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
-    
-    try {
-      // 並行獲取所有數據
-      final results = await Future.wait([
-        _apiService.getHomeBanners(),
-        _apiService.getLatestProducts(),
-        _apiService.getPopularProducts(),
-      ]);
-      
-      final bannerResponse = results[0];
-      final latestResponse = results[1];
-      final popularResponse = results[2];
-      
-      setState(() {
-        _isLoading = false;
-        
-        // 解析橫幅數據
-        if (bannerResponse.containsKey('home_full_banner') && bannerResponse['home_full_banner'] is List) {
-          _banners = List<Map<String, dynamic>>.from(bannerResponse['home_full_banner']);
-        }
-        
-        // 解析最新產品數據
-        if (latestResponse.containsKey('latest_products')) {
-          _latestProducts = latestResponse['latest_products'];
-        } else if (latestResponse.containsKey('products')) {
-          _latestProducts = latestResponse['products'];
-        }
-        
-        // 解析熱門產品數據
-        if (popularResponse.containsKey('popular_products')) {
-          _popularProducts = popularResponse['popular_products'];
-        } else if (popularResponse.containsKey('products')) {
-          _popularProducts = popularResponse['products'];
-        }
-      });
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorMessage = '獲取數據失敗: ${e.toString()}';
-      });
     }
   }
 

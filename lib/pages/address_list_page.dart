@@ -133,11 +133,45 @@ class _AddressListPageState extends State<AddressListPage> {
     }
   }
   
+  // 新增地址
+  Future<void> _addNewAddress() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddressEditPage(),
+      ),
+    );
+    
+    if (result == true) {
+      _fetchAddressList();
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('收貨地址'),
+        actions: [
+          // 新增地址按鈕放在右上角，改為文字按鈕
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: TextButton.icon(
+              icon: const Icon(Icons.add, color: Colors.black),
+              label: const Text(
+                '新增',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: _addNewAddress,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              ),
+            ),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -167,18 +201,7 @@ class _AddressListPageState extends State<AddressListPage> {
                           const Text('您還沒有添加收貨地址'),
                           const SizedBox(height: 16),
                           ElevatedButton(
-                            onPressed: () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const AddressEditPage(),
-                                ),
-                              );
-                              
-                              if (result == true) {
-                                _fetchAddressList();
-                              }
-                            },
+                            onPressed: _addNewAddress,
                             child: const Text('添加地址'),
                           ),
                         ],
@@ -196,7 +219,6 @@ class _AddressListPageState extends State<AddressListPage> {
                           // 構建完整地址
                           final fullName = '${address['firstname']} ${address['lastname']}'.trim();
                           final fullAddress = '${address['zone_id'] != null ? _getZoneName(address['zone_id']) : ''} ${address['address_1']} ${address['address_2'] ?? ''}'.trim();
-                          final cellphone = address['cellphone'] ?? '';
                           
                           return Dismissible(
                             key: Key(address['address_id'].toString()),
@@ -272,22 +294,12 @@ class _AddressListPageState extends State<AddressListPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 4),
-                                  Text(cellphone),
-                                  const SizedBox(height: 4),
                                   Text(fullAddress),
                                 ],
                               ),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (!isDefault)
-                                    IconButton(
-                                      icon: const Icon(Icons.check_circle_outline),
-                                      onPressed: () {
-                                        _setDefaultAddress(address['address_id'].toString());
-                                      },
-                                      tooltip: '設為默認',
-                                    ),
                                   IconButton(
                                     icon: const Icon(Icons.edit),
                                     onPressed: () async {
@@ -316,21 +328,6 @@ class _AddressListPageState extends State<AddressListPage> {
                         },
                       ),
                     ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const AddressEditPage(),
-            ),
-          );
-          
-          if (result == true) {
-            _fetchAddressList();
-          }
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
   
