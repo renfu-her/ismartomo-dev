@@ -273,47 +273,79 @@ class _CheckoutPageState extends State<CheckoutPage> {
             },
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(
-                    method['icon'],
-                    color: isSelected ? Colors.blue : Colors.grey,
-                    size: 28,
+                  Row(
+                    children: [
+                      Icon(
+                        method['icon'],
+                        color: isSelected ? Colors.blue : Colors.grey,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              method['title'],
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: isSelected ? Colors.blue : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              method['description'],
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Radio<String>(
+                        value: method['code'],
+                        groupValue: _selectedPaymentMethod,
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedPaymentMethod = value!;
+                          });
+                        },
+                        activeColor: Colors.blue,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          method['title'],
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.blue : Colors.black,
+                  
+                  // 如果選擇了銀行轉帳，顯示查看銀行資訊按鈕
+                  if (isSelected && method['code'] == 'bank_transfer') ...[
+                    const SizedBox(height: 12),
+                    const Divider(height: 1),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // 導航到銀行轉帳信息頁面
+                          Navigator.of(context).pushNamed('/bank_transfer_info');
+                        },
+                        icon: const Icon(Icons.info_outline, size: 18),
+                        label: const Text('查看銀行轉帳資訊'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[50],
+                          foregroundColor: Colors.blue[700],
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.blue[200]!),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          method['description'],
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                  Radio<String>(
-                    value: method['code'],
-                    groupValue: _selectedPaymentMethod,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedPaymentMethod = value!;
-                      });
-                    },
-                    activeColor: Colors.blue,
-                  ),
+                  ],
                 ],
               ),
             ),

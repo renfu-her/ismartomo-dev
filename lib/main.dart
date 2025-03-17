@@ -11,6 +11,7 @@ import 'pages/login_page.dart';
 import 'pages/register_page.dart';
 import 'pages/information_page.dart';
 import 'pages/favorite_page.dart';
+import 'pages/bank_transfer_info_page.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
@@ -145,6 +146,7 @@ class MyApp extends StatelessWidget {
         '/cart': (context) => const CartPage(),
         '/login': (context) => const LoginPage(),
         '/register': (context) => const RegisterPage(),
+        '/bank_transfer_info': (context) => const BankTransferInfoPage(),
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/product') {
