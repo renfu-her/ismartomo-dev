@@ -365,10 +365,6 @@ class _CartPageState extends State<CartPage> {
                   
                   const SizedBox(height: 4),
                   
-                  // 產品選項
-                  if (item.containsKey('option') && item['option'] is List && item['option'].isNotEmpty)
-                    ..._buildProductOptions(item['option']),
-                  
                   // 產品ID (設置為白色，實際上是隱藏)
                   Text(
                     'ID: ${item['product_id']}',
@@ -535,19 +531,4 @@ class _CartPageState extends State<CartPage> {
         .replaceAll('&apos;', "'");
   }
 
-  // 構建產品選項顯示
-  List<Widget> _buildProductOptions(List<dynamic> options) {
-    return options.map<Widget>((option) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 4.0),
-        child: Text(
-          '${_decodeHtmlEntities(option['name'])}: ${_decodeHtmlEntities(option['value'])}',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[700],
-          ),
-        ),
-      );
-    }).toList();
-  }
 } 
