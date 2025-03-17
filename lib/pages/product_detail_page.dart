@@ -26,6 +26,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   final Map<String, String> _selectedOptions = {};
   double _basePrice = 0.0; // 基本價格
   double _finalPrice = 0.0; // 最終價格（含選項）
+  bool _isPriceZero = false; // 標記價格是否為零
   
   @override
   void initState() {
@@ -90,11 +91,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       try {
         _basePrice = double.parse(priceStr);
         _finalPrice = _basePrice;
+        _isPriceZero = _basePrice == 0;
       } catch (e) {
         print('價格轉換錯誤: $e');
         _basePrice = 0.0;
         _finalPrice = 0.0;
+        _isPriceZero = true;
       }
+    } else {
+      _basePrice = 0.0;
+      _finalPrice = 0.0;
+      _isPriceZero = true;
     }
   }
   
@@ -286,30 +293,32 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       appBar: AppBar(
         title: const Text('產品明細'),
         actions: [
-          Consumer<UserService>(
-            builder: (context, userService, child) {
-              bool isFavorite = userService.isFavorite(_productData['product_id']);
-              return IconButton(
-                icon: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: Colors.red,
-                ),
-                onPressed: () {
-                  if (isFavorite) {
-                    userService.removeFavorite(_productData['product_id']);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已從收藏中移除')),
-                    );
-                  } else {
-                    userService.addFavorite(_productData['product_id']);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('已加入收藏')),
-                    );
-                  }
-                },
-              );
-            },
-          ),
+          // 只有當價格不為零時才顯示愛心按鈕
+          if (!_isPriceZero)
+            Consumer<UserService>(
+              builder: (context, userService, child) {
+                bool isFavorite = userService.isFavorite(_productData['product_id']);
+                return IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: Colors.red,
+                  ),
+                  onPressed: () {
+                    if (isFavorite) {
+                      userService.removeFavorite(_productData['product_id']);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已從收藏中移除')),
+                      );
+                    } else {
+                      userService.addFavorite(_productData['product_id']);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已加入收藏')),
+                      );
+                    }
+                  },
+                );
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
@@ -388,54 +397,55 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                     ),
                                     const SizedBox(height: 16),
                                     
-                                    // 價格顯示
-                                    Row(
-                                      children: [
-                                        Text(
-                                          '價格: ',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        // 如果有特價，顯示原價（加上橫線）和特價
-                                        if (_productData.containsKey('special') && 
-                                            _productData['special'] != null && 
-                                            _productData['special'] != false)
-                                          Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              // 原價（加上橫線）
-                                              Text(
-                                                '${_productData['price']}',
-                                                style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.grey,
-                                                  decoration: TextDecoration.lineThrough,
-                                                ),
-                                              ),
-                                              // 特價
-                                              Text(
-                                                '${_productData['special']}',
-                                                style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.red,
-                                                ),
-                                              ),
-                                            ],
-                                          )
-                                        else
+                                    // 價格顯示 - 只有當價格不為零時才顯示
+                                    if (!_isPriceZero)
+                                      Row(
+                                        children: [
                                           Text(
-                                            _formatPrice(_finalPrice * _quantity),
+                                            '價格: ',
                                             style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold,
-                                              color: Colors.red,
                                             ),
                                           ),
-                                      ],
-                                    ),
+                                          // 如果有特價，顯示原價（加上橫線）和特價
+                                          if (_productData.containsKey('special') && 
+                                              _productData['special'] != null && 
+                                              _productData['special'] != false)
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                // 原價（加上橫線）
+                                                Text(
+                                                  '${_productData['price']}',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.grey,
+                                                    decoration: TextDecoration.lineThrough,
+                                                  ),
+                                                ),
+                                                // 特價
+                                                Text(
+                                                  '${_productData['special']}',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.red,
+                                                  ),
+                                                ),
+                                              ],
+                                            )
+                                          else
+                                            Text(
+                                              _formatPrice(_finalPrice * _quantity),
+                                              style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
                                   ],
                                 ),
                                 
@@ -479,8 +489,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                 
                                 const SizedBox(height: 24),
                                 
-                                // 數量選擇 - 缺貨時隱藏
-                                if (!isOutOfStock)
+                                // 數量選擇 - 缺貨時或價格為零時隱藏
+                                if (!isOutOfStock && !_isPriceZero)
                                   Row(
                                     children: [
                                       const Text(
@@ -581,50 +591,51 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                   ),
                   
-                  // 底部固定的購買區域
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          spreadRadius: 1,
-                          blurRadius: 3,
-                          offset: const Offset(0, -1),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        // 加入購物車按鈕
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: isOutOfStock
-                                ? null
-                                : _addToCart,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isOutOfStock ? Colors.grey : Colors.white,
-                              foregroundColor: isOutOfStock ? Colors.white : Colors.black,
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(color: isOutOfStock ? Colors.grey : Colors.black, width: 1),
+                  // 底部固定的購買區域 - 價格為零時隱藏
+                  if (!_isPriceZero)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 1,
+                            blurRadius: 3,
+                            offset: const Offset(0, -1),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          // 加入購物車按鈕
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: isOutOfStock
+                                  ? null
+                                  : _addToCart,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isOutOfStock ? Colors.grey : Colors.white,
+                                foregroundColor: isOutOfStock ? Colors.white : Colors.black,
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  side: BorderSide(color: isOutOfStock ? Colors.grey : Colors.black, width: 1),
+                                ),
+                                minimumSize: Size(double.infinity, 50),
                               ),
-                              minimumSize: Size(double.infinity, 50),
-                            ),
-                            child: Text(
-                              isOutOfStock ? '產品已售完' : '加入購物車',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                              child: Text(
+                                isOutOfStock ? '產品已售完' : '加入購物車',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
     );

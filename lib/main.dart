@@ -806,6 +806,30 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 檢查產品價格是否為0或空字符串
+    bool isPriceZeroOrEmpty = false;
+    
+    if (product['price'] != null) {
+      String priceStr = product['price'].toString().trim();
+      // 檢查是否為空字符串
+      if (priceStr.isEmpty) {
+        isPriceZeroOrEmpty = true;
+      } else {
+        // 移除貨幣符號和空格，轉換為數字
+        priceStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
+        try {
+          double price = double.parse(priceStr);
+          isPriceZeroOrEmpty = price == 0;
+        } catch (e) {
+          // 如果無法解析價格，檢查原始字符串是否為 "$0" 或類似形式
+          isPriceZeroOrEmpty = priceStr.contains('0') && !priceStr.contains(RegExp(r'[1-9]'));
+        }
+      }
+    } else {
+      // 如果價格為null，視為零價格
+      isPriceZeroOrEmpty = true;
+    }
+
     return GestureDetector(
       onTap: () {
         if (onTap != null) {
@@ -866,10 +890,10 @@ class ProductCard extends StatelessWidget {
                   // 底部區域：價格、愛心、購物車分為三欄
                   Row(
                     children: [
-                      // 價格佔據約50%的寬度
+                      // 價格佔據約50%的寬度 - 只有當價格不為零或空時才顯示
                       Expanded(
                         flex: 5, // 5/10 = 50%
-                        child: product['price'] != null
+                        child: !isPriceZeroOrEmpty && product['price'] != null
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -898,61 +922,65 @@ class ProductCard extends StatelessWidget {
                             )
                           : const SizedBox(),
                       ),
-                      // 愛心按鈕
-                      Expanded(
-                        flex: 2, // 2/10 = 20%
-                        child: Consumer<UserService>(
-                          builder: (context, userService, child) {
-                            final productId = product['product_id'].toString();
-                            final isFavorite = userService.isFavorite(productId);
-                            
-                            return IconButton(
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                              icon: FaIcon(
-                                isFavorite ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
-                                size: 18,
-                                color: Colors.red,
-                              ),
-                              onPressed: () {
-                                if (userService.isLoggedIn) {
-                                  if (isFavorite) {
-                                    userService.removeFavorite(productId);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('已從收藏中移除')),
-                                    );
+                      // 愛心按鈕 - 只有當價格不為零或空時才顯示
+                      if (!isPriceZeroOrEmpty)
+                        Expanded(
+                          flex: 2, // 2/10 = 20%
+                          child: Consumer<UserService>(
+                            builder: (context, userService, child) {
+                              final productId = product['product_id'].toString();
+                              final isFavorite = userService.isFavorite(productId);
+                              
+                              return IconButton(
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                icon: FaIcon(
+                                  isFavorite ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
+                                  size: 18,
+                                  color: Colors.red,
+                                ),
+                                onPressed: () {
+                                  if (userService.isLoggedIn) {
+                                    if (isFavorite) {
+                                      userService.removeFavorite(productId);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('已從收藏中移除')),
+                                      );
+                                    } else {
+                                      userService.addFavorite(productId);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('已加入收藏')),
+                                      );
+                                    }
                                   } else {
-                                    userService.addFavorite(productId);
+                                    // 提示用戶登入
                                     ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('已加入收藏')),
+                                      SnackBar(
+                                        content: const Text('請先登入以使用收藏功能'),
+                                        action: SnackBarAction(
+                                          label: '登入',
+                                          onPressed: () {
+                                            Navigator.of(context).pushNamed('/login');
+                                          },
+                                        ),
+                                      ),
                                     );
                                   }
-                                } else {
-                                  // 提示用戶登入
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text('請先登入以使用收藏功能'),
-                                      action: SnackBarAction(
-                                        label: '登入',
-                                        onPressed: () {
-                                          Navigator.of(context).pushNamed('/login');
-                                        },
-                                      ),
-                                    ),
-                                  );
-                                }
-                              },
-                            );
-                          },
+                                },
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                      // 購物車按鈕
+                      // 根據價格顯示不同的圖標：價格為0顯示詳細資料圖標，否則顯示購物車圖標
                       Expanded(
                         flex: 3, // 3/10 = 30%
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
-                          icon: const FaIcon(FontAwesomeIcons.cartShopping, size: 18),
+                          icon: FaIcon(
+                            isPriceZeroOrEmpty ? FontAwesomeIcons.circleInfo : FontAwesomeIcons.cartShopping,
+                            size: 18,
+                          ),
                           onPressed: () {
                             // 導航到產品詳情頁面，與點擊產品卡片的行為一致
                             Navigator.of(context).pushNamed(
