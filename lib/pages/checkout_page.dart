@@ -59,6 +59,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // 免運費門檻
   final double _freeShippingThreshold = 1000.0;
 
+  // 輔助方法：將HTML實體轉換為實際字符
+  String _decodeHtmlEntities(String text) {
+    if (text.isEmpty) {
+      return '';
+    }
+    return text
+        .replaceAll('&quot;', '"')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&apos;', "'");
+  }
+
   @override
   void initState() {
     super.initState();
@@ -595,14 +608,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      total['title'] ?? '',
+                      _decodeHtmlEntities(total['title'] ?? ''),
                       style: TextStyle(
                         fontSize: isTotal ? 16 : 14,
                         fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                     Text(
-                      total['text'] ?? '',
+                      _decodeHtmlEntities(total['text'] ?? ''),
                       style: TextStyle(
                         fontSize: isTotal ? 18 : 14,
                         fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
@@ -691,7 +704,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
               children: [
                 // 商品名稱
                 Text(
-                  item['name'] ?? '未知商品',
+                  _decodeHtmlEntities(item['name'] ?? '未知商品'),
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -701,6 +714,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 ),
                 
                 const SizedBox(height: 4),
+                
+                // 產品選項
+                if (item.containsKey('option') && item['option'] is List && item['option'].isNotEmpty)
+                  ..._buildProductOptions(item['option']),
                 
                 // 價格和數量
                 Row(
@@ -729,6 +746,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ],
       ),
     );
+  }
+  
+  // 構建產品選項顯示
+  List<Widget> _buildProductOptions(List<dynamic> options) {
+    return options.map<Widget>((option) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 2.0),
+        child: Text(
+          '${_decodeHtmlEntities(option['name'])}: ${_decodeHtmlEntities(option['value'])}',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      );
+    }).toList();
   }
   
   double _calculateShippingFee() {
@@ -1051,7 +1084,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       double total = double.tryParse(totalStr) ?? 0.0;
       
       orderData['products[$i][product_id]'] = item['product_id']?.toString() ?? '';
-      orderData['products[$i][name]'] = item['name'] ?? '';
+      orderData['products[$i][name]'] = _decodeHtmlEntities(item['name'] ?? '');
       orderData['products[$i][model]'] = item['model'] ?? '';
       orderData['products[$i][quantity]'] = item['quantity']?.toString() ?? '1';
       orderData['products[$i][price]'] = price.toString();
@@ -1068,8 +1101,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
           final option = options[j];
           orderData['products[$i][option][$j][product_option_id]'] = option['product_option_id']?.toString() ?? '';
           orderData['products[$i][option][$j][product_option_value_id]'] = option['product_option_value_id']?.toString() ?? '';
-          orderData['products[$i][option][$j][name]'] = option['name'] ?? '';
-          orderData['products[$i][option][$j][value]'] = option['value'] ?? '';
+          orderData['products[$i][option][$j][name]'] = _decodeHtmlEntities(option['name'] ?? '');
+          orderData['products[$i][option][$j][value]'] = _decodeHtmlEntities(option['value'] ?? '');
           orderData['products[$i][option][$j][type]'] = option['type'] ?? '';
         }
       }
