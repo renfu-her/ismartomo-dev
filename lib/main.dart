@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'services/api_service.dart';
 import 'services/user_service.dart';
 import 'pages/category_page.dart';
@@ -62,6 +65,21 @@ void main() async {
     debugPrint('SharedPreferences 初始化成功');
   } catch (e) {
     debugPrint('SharedPreferences 初始化失敗: ${e.toString()}');
+  }
+  
+  // 初始化 WebView
+  try {
+    // 根據平台選擇適當的 WebView 實現
+    if (WebViewPlatform.instance == null) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        WebViewPlatform.instance = AndroidWebViewPlatform();
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        WebViewPlatform.instance = WebKitWebViewPlatform();
+      }
+    }
+    debugPrint('WebView 平台初始化成功: ${defaultTargetPlatform.toString()}');
+  } catch (e) {
+    debugPrint('WebView 平台初始化失敗: ${e.toString()}');
   }
   
   runApp(

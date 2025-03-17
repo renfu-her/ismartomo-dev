@@ -191,6 +191,100 @@ class ApiService {
     return _get('gws_store_settings');
   }
   
+  // 獲取綠界支付設置
+  Future<Map<String, dynamic>> getEcpaySettings() async {
+    try {
+      final response = await _get('gws_store_settings');
+      
+      // 添加調試信息
+      debugPrint('獲取到的商店設置: ${response.keys}');
+      
+      // 提取綠界支付相關設置
+      final Map<String, dynamic> ecpaySettings = {};
+      
+      // 檢查所有可能的鍵名
+      final List<String> possibleMerchantIdKeys = [
+        'payment_ecpaypayment_merchant_id',
+        'ecpaypayment_merchant_id',
+        'payment_ecpay_merchant_id',
+        'ecpay_merchant_id'
+      ];
+      
+      final List<String> possibleHashKeyKeys = [
+        'payment_ecpaypayment_hash_key',
+        'ecpaypayment_hash_key',
+        'payment_ecpay_hash_key',
+        'ecpay_hash_key'
+      ];
+      
+      final List<String> possibleHashIvKeys = [
+        'payment_ecpaypayment_hash_iv',
+        'ecpaypayment_hash_iv',
+        'payment_ecpay_hash_iv',
+        'ecpay_hash_iv'
+      ];
+      
+      // 嘗試找到 merchant_id
+      for (String key in possibleMerchantIdKeys) {
+        if (response.containsKey(key) && response[key] != null) {
+          ecpaySettings['merchant_id'] = response[key];
+          debugPrint('找到 merchant_id: ${response[key]} (鍵: $key)');
+          break;
+        }
+      }
+      
+      // 嘗試找到 hash_key
+      for (String key in possibleHashKeyKeys) {
+        if (response.containsKey(key) && response[key] != null) {
+          ecpaySettings['hash_key'] = response[key];
+          debugPrint('找到 hash_key: ${response[key]} (鍵: $key)');
+          break;
+        }
+      }
+      
+      // 嘗試找到 hash_iv
+      for (String key in possibleHashIvKeys) {
+        if (response.containsKey(key) && response[key] != null) {
+          ecpaySettings['hash_iv'] = response[key];
+          debugPrint('找到 hash_iv: ${response[key]} (鍵: $key)');
+          break;
+        }
+      }
+      
+      // 如果沒有找到設置，使用測試環境的默認值
+      if (!ecpaySettings.containsKey('merchant_id') || ecpaySettings['merchant_id'] == null) {
+        ecpaySettings['merchant_id'] = '2000132';
+        debugPrint('使用測試環境默認 merchant_id: 2000132');
+      }
+      
+      if (!ecpaySettings.containsKey('hash_key') || ecpaySettings['hash_key'] == null) {
+        ecpaySettings['hash_key'] = '5294y06JbISpM5x9';
+        debugPrint('使用測試環境默認 hash_key: 5294y06JbISpM5x9');
+      }
+      
+      if (!ecpaySettings.containsKey('hash_iv') || ecpaySettings['hash_iv'] == null) {
+        ecpaySettings['hash_iv'] = 'v77hoKGq4kWxNNIS';
+        debugPrint('使用測試環境默認 hash_iv: v77hoKGq4kWxNNIS');
+      }
+      
+      // 添加支付方式
+      ecpaySettings['payment_methods'] = response['payment_ecpaypayment_payment_methods'] ?? 'Credit';
+      
+      debugPrint('最終綠界支付設置: $ecpaySettings');
+      return ecpaySettings;
+    } catch (e) {
+      debugPrint('獲取綠界支付設置失敗: ${e.toString()}');
+      
+      // 發生錯誤時，返回測試環境的默認值
+      return {
+        'merchant_id': '2000132',
+        'hash_key': '5294y06JbISpM5x9',
+        'hash_iv': 'v77hoKGq4kWxNNIS',
+        'payment_methods': 'Credit'
+      };
+    }
+  }
+  
   // 獲取區域列表
   Future<Map<String, dynamic>> getZones(String countryId) async {
     try {

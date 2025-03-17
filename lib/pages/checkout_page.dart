@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/ecpay_service.dart';
 import 'dart:convert';
 
 class CheckoutPage extends StatefulWidget {
@@ -11,6 +12,7 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   final ApiService _apiService = ApiService();
+  final EcpayService _ecpayService = EcpayService();
   bool _isLoading = true;
   String _errorMessage = '';
   
@@ -72,6 +74,16 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     _fetchData();
+    _initEcpaySettings();
+  }
+  
+  // 初始化綠界支付設置
+  Future<void> _initEcpaySettings() async {
+    try {
+      await _ecpayService.initEcpaySettings();
+    } catch (e) {
+      debugPrint('初始化綠界支付設置錯誤: ${e.toString()}');
+    }
   }
   
   Future<void> _fetchData() async {
@@ -965,66 +977,203 @@ class _CheckoutPageState extends State<CheckoutPage> {
           }
         }
         
-        // 訂單提交成功後，清空購物車
-        try {
-          // 顯示清空購物車的加載指示器
+        // 如果選擇了綠界支付，則處理綠界支付
+        if (_selectedPaymentMethod == 'ecpaypayment' && orderId.isNotEmpty) {
+          debugPrint('處理綠界支付，訂單ID: $orderId');
+          
+          // 初始化綠界支付設置
+          await _ecpayService.initEcpaySettings();
+          
+          // 計算訂單總金額（不含小數點）
+          String totalAmount = _calculateFinalTotal().replaceAll(RegExp(r'[^\d]'), '');
+          
+          // 確保總金額不為空且至少為 1
+          if (totalAmount.isEmpty || totalAmount == '0') {
+            totalAmount = '1';
+          }
+          
+          debugPrint('訂單總金額: $totalAmount');
+          
+          // 構建商品名稱（最多三個商品，其餘顯示為"等多項商品"）
+          String itemName = '';
+          int itemCount = 0;
+          for (var item in _cartItems) {
+            if (itemCount < 3) {
+              if (itemName.isNotEmpty) {
+                itemName += '#';
+              }
+              itemName += _decodeHtmlEntities(item['name'] ?? '未知商品');
+              itemCount++;
+            } else {
+              itemName += '等多項商品';
+              break;
+            }
+          }
+          
+          // 如果沒有商品，使用默認名稱
+          if (itemName.isEmpty) {
+            itemName = '網路商店訂單';
+          }
+          
+          debugPrint('商品名稱: $itemName');
+          
+          // 生成唯一的訂單編號 (使用時間戳確保唯一性)
+          final String uniqueOrderId = 'OD${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 10)}';
+          
+          debugPrint('綠界支付訂單編號: $uniqueOrderId');
+          
+          // 處理綠界支付
+          _ecpayService.processEcpayPayment(
+            context: context,
+            orderId: uniqueOrderId,
+            totalAmount: totalAmount,
+            itemName: itemName,
+            onPaymentComplete: (bool success, String? message) async {
+              if (success) {
+                // 支付成功，清空購物車
+                try {
+                  // 顯示清空購物車的加載指示器
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (BuildContext context) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    },
+                  );
+                  
+                  // 遍歷購物車中的所有商品，並移除
+                  for (var item in _cartItems) {
+                    final cartId = item['cart_id']?.toString() ?? '';
+                    if (cartId.isNotEmpty) {
+                      await _apiService.removeFromCart(cartId);
+                    }
+                  }
+                  
+                  // 關閉清空購物車的加載指示器
+                  Navigator.of(context, rootNavigator: true).pop();
+                } catch (e) {
+                  // 如果清空購物車失敗，只記錄錯誤，不影響訂單提交成功的流程
+                  debugPrint('清空購物車失敗: ${e.toString()}');
+                  
+                  // 關閉可能存在的加載指示器
+                  Navigator.of(context, rootNavigator: true).pop();
+                }
+                
+                // 顯示成功對話框
+                showDialog(
+                  context: context,
+                  barrierDismissible: false,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('支付成功'),
+                      content: Text('您的訂單已成功支付，訂單編號: $orderId\n我們將盡快處理您的訂單。'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            // 關閉對話框
+                            Navigator.of(context).pop();
+                            // 返回首頁
+                            Navigator.of(context).popUntil((route) => route.isFirst);
+                            // 顯示訂單成功提示
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('訂單 $orderId 已成功支付'),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
+                          },
+                          child: const Text('確定'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              } else {
+                // 支付失敗
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('支付失敗'),
+                      content: Text(message ?? '支付過程中發生錯誤'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('確定'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }
+            },
+          );
+        } else {
+          // 非綠界支付，訂單提交成功後，清空購物車
+          try {
+            // 顯示清空購物車的加載指示器
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext context) {
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              },
+            );
+            
+            // 遍歷購物車中的所有商品，並移除
+            for (var item in _cartItems) {
+              final cartId = item['cart_id']?.toString() ?? '';
+              if (cartId.isNotEmpty) {
+                await _apiService.removeFromCart(cartId);
+              }
+            }
+            
+            // 關閉清空購物車的加載指示器
+            Navigator.of(context, rootNavigator: true).pop();
+          } catch (e) {
+            // 如果清空購物車失敗，只記錄錯誤，不影響訂單提交成功的流程
+            debugPrint('清空購物車失敗: ${e.toString()}');
+            
+            // 關閉可能存在的加載指示器
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+          
+          // 顯示成功對話框
           showDialog(
             context: context,
             barrierDismissible: false,
             builder: (BuildContext context) {
-              return const Center(
-                child: CircularProgressIndicator(),
+              return AlertDialog(
+                title: const Text('訂單提交成功'),
+                content: Text('您的訂單已成功提交，訂單編號: $orderId\n我們將盡快處理您的訂單。'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      // 關閉對話框
+                      Navigator.of(context).pop();
+                      // 返回首頁
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      // 顯示訂單成功提示
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('訂單 $orderId 已成功建立'),
+                          duration: const Duration(seconds: 3),
+                        ),
+                      );
+                    },
+                    child: const Text('確定'),
+                  ),
+                ],
               );
             },
           );
-          
-          // 遍歷購物車中的所有商品，並移除
-          for (var item in _cartItems) {
-            final cartId = item['cart_id']?.toString() ?? '';
-            if (cartId.isNotEmpty) {
-              await _apiService.removeFromCart(cartId);
-            }
-          }
-          
-          // 關閉清空購物車的加載指示器
-          Navigator.of(context, rootNavigator: true).pop();
-        } catch (e) {
-          // 如果清空購物車失敗，只記錄錯誤，不影響訂單提交成功的流程
-          debugPrint('清空購物車失敗: ${e.toString()}');
-          
-          // 關閉可能存在的加載指示器
-          Navigator.of(context, rootNavigator: true).pop();
         }
-        
-        // 顯示成功對話框
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('訂單提交成功'),
-              content: Text('您的訂單已成功提交，訂單編號: $orderId\n我們將盡快處理您的訂單。'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    // 關閉對話框
-                    Navigator.of(context).pop();
-                    // 返回首頁
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                    // 顯示訂單成功提示
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('訂單 $orderId 已成功建立'),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  },
-                  child: const Text('確定'),
-                ),
-              ],
-            );
-          },
-        );
       } else {
         // 獲取錯誤消息
         String errorMessage = '結帳系統失敗';
@@ -1125,6 +1274,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     
     orderData['payment_method[title]'] = paymentMethod['title'] ?? '';
     orderData['payment_method[code]'] = paymentMethod['code'] ?? '';
+    
+    // 如果是綠界支付，添加額外的支付信息
+    if (_selectedPaymentMethod == 'ecpaypayment') {
+      orderData['payment_method[ecpay_payment_method]'] = 'Credit';
+    }
     
     // 配送地址（與付款地址相同）
     orderData['shipping_address[firstname]'] = _addressData['firstname'] ?? '';
