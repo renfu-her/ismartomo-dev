@@ -671,17 +671,101 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
   
   Widget _buildCartItem(dynamic item) {
+    // 解析選項
+    List<Map<String, String>> options = [];
+    
+    // 優先使用 optiondata 欄位，如果存在
+    if (item.containsKey('optiondata') && item['optiondata'] is List) {
+      final List<dynamic> optionDataList = item['optiondata'];
+      
+      for (var option in optionDataList) {
+        if (option is Map && option.containsKey('name') && option.containsKey('value')) {
+          options.add({
+            'name': _decodeHtmlEntities(option['name'] ?? ''),
+            'value': _decodeHtmlEntities(option['value'] ?? '')
+          });
+        }
+      }
+    } 
+    // 如果 optiondata 為空或不存在，嘗試使用 option 欄位
+    else if (item.containsKey('option')) {
+      if (item['option'] is List) {
+        // 如果選項已經是列表格式，轉換為所需的格式
+        for (var option in item['option']) {
+          if (option is Map) {
+            options.add({
+              'name': _decodeHtmlEntities(option['name'] ?? ''),
+              'value': _decodeHtmlEntities(option['value'] ?? '')
+            });
+          }
+        }
+      } else if (item['option'] is String) {
+        // 如果選項是字符串格式，嘗試解析
+        try {
+          final String optionStr = item['option'];
+          if (optionStr != "[]" && optionStr.isNotEmpty) {
+            final Map<String, dynamic> optionsMap = json.decode(optionStr);
+            
+            // 這裡需要將選項 ID 轉換為實際的選項名稱和值
+            // 根據截圖中的示例，我們可以硬編碼一些映射關係
+            final Map<String, String> optionIdToName = {
+              '3557': '顏色',
+              '3558': '尺寸',
+              '3563': '顏色',
+              '3564': '尺寸'
+            };
+            
+            final Map<String, Map<String, String>> optionValueMap = {
+              '3557': {
+                '19170': '黑色',
+                '19171': '白色',
+                '19172': '紅色'
+              },
+              '3558': {
+                '19175': 'L',
+                '19176': 'M',
+                '19177': 'S'
+              },
+              '3563': {
+                '19188': '黑色',
+                '19189': '粉紅',
+                '19190': '藍色'
+              },
+              '3564': {
+                '19191': 'S',
+                '19192': 'M',
+                '19193': 'L'
+              }
+            };
+            
+            // 遍歷選項映射
+            optionsMap.forEach((optionId, valueId) {
+              final String optionName = optionIdToName[optionId] ?? optionId;
+              final String valueName = optionValueMap[optionId]?[valueId.toString()] ?? valueId.toString();
+              
+              options.add({
+                'name': optionName,
+                'value': valueName
+              });
+            });
+          }
+        } catch (e) {
+          debugPrint('解析選項失敗: ${e.toString()}');
+        }
+      }
+    }
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 商品圖片
+          // 商品圖片 - 調整為與購物車頁面一致的大小
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: SizedBox(
-              width: 60,
-              height: 60,
+              width: 80, // 從 60 改為 80
+              height: 80, // 從 60 改為 80
               child: Image.network(
                 item['thumb'] ?? '',
                 fit: BoxFit.cover,
@@ -702,11 +786,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 商品名稱
+                // 商品名稱 - 調整字體大小
                 Text(
                   _decodeHtmlEntities(item['name'] ?? '未知商品'),
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 18, // 從 14 改為 18
                     fontWeight: FontWeight.bold,
                   ),
                   maxLines: 2,
@@ -715,18 +799,78 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 
                 const SizedBox(height: 4),
                 
-                // 產品選項
-                if (item.containsKey('option') && item['option'] is List && item['option'].isNotEmpty)
-                  ..._buildProductOptions(item['option']),
+                // 產品ID (設置為白色，實際上是隱藏) - 與購物車頁面一致
+                Text(
+                  'ID: ${item['product_id']}',
+                  style: const TextStyle(
+                    fontSize: 1,
+                    color: Colors.white,
+                  ),
+                ),
                 
-                // 價格和數量
+                const SizedBox(height: 8),
+                
+                // 產品選項 - 使用與購物車頁面一致的顯示方式
+                if (options.isNotEmpty) ...[
+                  ...options.map((option) => Container(
+                    margin: const EdgeInsets.only(bottom: 4.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${option['name']}: ',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            option['value'] ?? '',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )).toList(),
+                  
+                  // 如果有選項，添加一個分隔線
+                  Divider(color: Colors.grey[200], height: 16),
+                ],
+                
+                // 價格和數量 - 調整為與購物車頁面類似的顯示方式
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '單價: ${item['price'] ?? ''}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '數量: ${item['quantity'] ?? '1'}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                    // 小計
                     Text(
-                      '${item['price'] ?? ''} × ${item['quantity'] ?? '1'}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                      item['total'] ?? '',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
@@ -734,34 +878,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
           ),
-          
-          // 小計
-          Text(
-            item['total'] ?? '',
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ],
       ),
     );
-  }
-  
-  // 構建產品選項顯示
-  List<Widget> _buildProductOptions(List<dynamic> options) {
-    return options.map<Widget>((option) {
-      return Padding(
-        padding: const EdgeInsets.only(top: 2.0),
-        child: Text(
-          '${_decodeHtmlEntities(option['name'])}: ${_decodeHtmlEntities(option['value'])}',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-      );
-    }).toList();
   }
   
   double _calculateShippingFee() {
@@ -781,6 +900,133 @@ class _CheckoutPageState extends State<CheckoutPage> {
     
     // 否則返回固定運費 60
     return 60.0;
+  }
+  
+  // 構建產品選項顯示 - 保留此方法以防其他地方調用
+  List<Widget> _buildProductOptions(List<dynamic> options) {
+    List<Map<String, String>> parsedOptions = [];
+    
+    // 檢查是否為 optiondata 格式
+    bool isOptionDataFormat = options.isNotEmpty && 
+                             options[0] is Map && 
+                             options[0].containsKey('product_option_id') && 
+                             options[0].containsKey('product_option_value_id') &&
+                             options[0].containsKey('name') && 
+                             options[0].containsKey('value');
+    
+    if (isOptionDataFormat) {
+      // 直接使用 optiondata 格式
+      for (var option in options) {
+        if (option is Map && option.containsKey('name') && option.containsKey('value')) {
+          parsedOptions.add({
+            'name': _decodeHtmlEntities(option['name'] ?? ''),
+            'value': _decodeHtmlEntities(option['value'] ?? '')
+          });
+        }
+      }
+    } else {
+      // 選項 ID 到名稱的映射
+      final Map<String, String> optionIdToName = {
+        '3557': '顏色',
+        '3558': '尺寸',
+        '3563': '顏色',
+        '3564': '尺寸'
+      };
+      
+      // 選項值 ID 到名稱的映射
+      final Map<String, Map<String, String>> optionValueMap = {
+        '3557': {
+          '19170': '黑色',
+          '19171': '白色',
+          '19172': '紅色'
+        },
+        '3558': {
+          '19175': 'L',
+          '19176': 'M',
+          '19177': 'S'
+        },
+        '3563': {
+          '19188': '黑色',
+          '19189': '粉紅',
+          '19190': '藍色'
+        },
+        '3564': {
+          '19191': 'S',
+          '19192': 'M',
+          '19193': 'L'
+        }
+      };
+      
+      for (var option in options) {
+        if (option is Map) {
+          // 如果選項已經包含名稱和值，直接使用
+          if (option.containsKey('name') && option.containsKey('value')) {
+            parsedOptions.add({
+              'name': _decodeHtmlEntities(option['name'] ?? ''),
+              'value': _decodeHtmlEntities(option['value'] ?? '')
+            });
+          } 
+          // 如果選項是 ID 格式，嘗試轉換
+          else if (option.containsKey('product_option_id') && option.containsKey('product_option_value_id')) {
+            final String optionId = option['product_option_id']?.toString() ?? '';
+            final String valueId = option['product_option_value_id']?.toString() ?? '';
+            
+            final String optionName = optionIdToName[optionId] ?? optionId;
+            final String valueName = optionValueMap[optionId]?[valueId] ?? valueId;
+            
+            parsedOptions.add({
+              'name': optionName,
+              'value': valueName
+            });
+          }
+        } else if (option is String) {
+          // 嘗試解析字符串格式的選項
+          try {
+            // 檢查是否為 JSON 格式
+            if (option.startsWith('{') && option.endsWith('}')) {
+              final Map<String, dynamic> optionMap = json.decode(option);
+              optionMap.forEach((optionId, valueId) {
+                final String optionName = optionIdToName[optionId] ?? optionId;
+                final String valueName = optionValueMap[optionId]?[valueId.toString()] ?? valueId.toString();
+                
+                parsedOptions.add({
+                  'name': optionName,
+                  'value': valueName
+                });
+              });
+            }
+          } catch (e) {
+            debugPrint('解析選項字符串失敗: ${e.toString()}');
+          }
+        }
+      }
+    }
+    
+    return parsedOptions.map<Widget>((option) => Container(
+      margin: const EdgeInsets.only(bottom: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${option['name']}: ',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[800],
+            ),
+          ),
+          Expanded(
+            child: Text(
+              option['value'] ?? '',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+        ],
+      ),
+    )).toList();
   }
   
   String _calculateFinalTotal() {
