@@ -352,9 +352,9 @@ class _CartPageState extends State<CartPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 商品名稱
+                  // 商品名稱 - 使用HTML實體轉換
                   Text(
-                    item['name'] ?? '未知商品',
+                    _decodeHtmlEntities(item['name'] ?? '未知商品'),
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -364,6 +364,10 @@ class _CartPageState extends State<CartPage> {
                   ),
                   
                   const SizedBox(height: 4),
+                  
+                  // 產品選項
+                  if (item.containsKey('option') && item['option'] is List && item['option'].isNotEmpty)
+                    ..._buildProductOptions(item['option']),
                   
                   // 產品ID (設置為白色，實際上是隱藏)
                   Text(
@@ -495,14 +499,14 @@ class _CartPageState extends State<CartPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    total['title'] ?? '',
+                    _decodeHtmlEntities(total['title'] ?? ''),
                     style: TextStyle(
                       fontSize: isTotal ? 16 : 14,
                       fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
                     ),
                   ),
                   Text(
-                    total['text'] ?? '',
+                    _decodeHtmlEntities(total['text'] ?? ''),
                     style: TextStyle(
                       fontSize: isTotal ? 18 : 14,
                       fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
@@ -516,5 +520,34 @@ class _CartPageState extends State<CartPage> {
         ],
       ),
     );
+  }
+
+  // 輔助方法：將HTML實體轉換為實際字符
+  String _decodeHtmlEntities(String text) {
+    if (text == null || text.isEmpty) {
+      return '';
+    }
+    return text
+        .replaceAll('&quot;', '"')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&apos;', "'");
+  }
+
+  // 構建產品選項顯示
+  List<Widget> _buildProductOptions(List<dynamic> options) {
+    return options.map<Widget>((option) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4.0),
+        child: Text(
+          '${_decodeHtmlEntities(option['name'])}: ${_decodeHtmlEntities(option['value'])}',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[700],
+          ),
+        ),
+      );
+    }).toList();
   }
 } 
