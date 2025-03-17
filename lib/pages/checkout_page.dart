@@ -702,7 +702,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // 解析選項
     List<Map<String, String>> options = [];
     
-    // 優先使用 optiondata 欄位，如果存在
+    // 只使用 optiondata 欄位，忽略 option 欄位
     if (item.containsKey('optiondata') && item['optiondata'] is List) {
       final List<dynamic> optionDataList = item['optiondata'];
       
@@ -714,74 +714,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
           });
         }
       }
-    } 
-    // 如果 optiondata 為空或不存在，嘗試使用 option 欄位
-    else if (item.containsKey('option')) {
-      if (item['option'] is List) {
-        // 如果選項已經是列表格式，轉換為所需的格式
-        for (var option in item['option']) {
-          if (option is Map) {
-            options.add({
-              'name': _decodeHtmlEntities(option['name'] ?? ''),
-              'value': _decodeHtmlEntities(option['value'] ?? '')
-            });
-          }
-        }
-      } else if (item['option'] is String) {
-        // 如果選項是字符串格式，嘗試解析
-        try {
-          final String optionStr = item['option'];
-          if (optionStr != "[]" && optionStr.isNotEmpty) {
-            final Map<String, dynamic> optionsMap = json.decode(optionStr);
-            
-            // 這裡需要將選項 ID 轉換為實際的選項名稱和值
-            // 根據截圖中的示例，我們可以硬編碼一些映射關係
-            final Map<String, String> optionIdToName = {
-              '3557': '顏色',
-              '3558': '尺寸',
-              '3563': '顏色',
-              '3564': '尺寸'
-            };
-            
-            final Map<String, Map<String, String>> optionValueMap = {
-              '3557': {
-                '19170': '黑色',
-                '19171': '白色',
-                '19172': '紅色'
-              },
-              '3558': {
-                '19175': 'L',
-                '19176': 'M',
-                '19177': 'S'
-              },
-              '3563': {
-                '19188': '黑色',
-                '19189': '粉紅',
-                '19190': '藍色'
-              },
-              '3564': {
-                '19191': 'S',
-                '19192': 'M',
-                '19193': 'L'
-              }
-            };
-            
-            // 遍歷選項映射
-            optionsMap.forEach((optionId, valueId) {
-              final String optionName = optionIdToName[optionId] ?? optionId;
-              final String valueName = optionValueMap[optionId]?[valueId.toString()] ?? valueId.toString();
-              
-              options.add({
-                'name': optionName,
-                'value': valueName
-              });
-            });
-          }
-        } catch (e) {
-          debugPrint('解析選項失敗: ${e.toString()}');
-        }
-      }
     }
+    // 移除對 option 欄位的處理
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),

@@ -660,11 +660,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             ),
             const SizedBox(height: 8),
+            // 使用正確的條件渲染方式
             if (option['type'] == 'radio')
-              // 根據選項類型使用不同的顯示方式
               optionName.toLowerCase().contains('color') || optionName.toLowerCase().contains('顏色')
                 ? _buildColorOptions(option)
-                : _buildSizeOptions(option),
+                : _buildSizeOptions(option)
+            else if (option['type'] == 'select')
+              _buildSelectOptions(option),
             const SizedBox(height: 16),
           ],
         ),
@@ -990,5 +992,77 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     });
     
     return result;
+  }
+  
+  // 構建下拉選單選項
+  Widget _buildSelectOptions(Map<String, dynamic> option) {
+    // 獲取選項列表
+    List<dynamic> optionValues = option['product_option_value'] as List;
+    
+    // 確保有選中的選項
+    if (!_selectedOptions.containsKey(option['name']) && optionValues.isNotEmpty) {
+      _selectedOptions[option['name']] = optionValues[0]['product_option_value_id'];
+    }
+    
+    // 獲取當前選中的選項名稱
+    String selectedName = '';
+    for (var value in optionValues) {
+      if (value['product_option_value_id'] == _selectedOptions[option['name']]) {
+        selectedName = value['name'];
+        break;
+      }
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 下拉選單
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: DropdownButton<String>(
+            value: _selectedOptions[option['name']],
+            isExpanded: true,
+            underline: Container(), // 移除下劃線
+            icon: const Icon(Icons.arrow_drop_down),
+            hint: const Text('請選擇'),
+            items: optionValues.map<DropdownMenuItem<String>>((value) {
+              // 構建選項顯示文本
+              String optionText = value['name'];
+              
+              return DropdownMenuItem<String>(
+                value: value['product_option_value_id'],
+                child: Text(optionText),
+              );
+            }).toList(),
+            onChanged: (String? newValue) {
+              if (newValue != null) {
+                setState(() {
+                  _selectedOptions[option['name']] = newValue;
+                  _calculateFinalPrice();
+                });
+              }
+            },
+          ),
+        ),
+        
+        // 顯示選中的選項名稱
+        if (selectedName.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              '已選: $selectedName',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+      ],
+    );
   }
 } 
