@@ -134,7 +134,7 @@ class _CartPageState extends State<CartPage> {
     }
   }
 
-  Future<void> _updateCartItemQuantity(String cartId, int quantity) async {
+  Future<void> _updateCartItemQuantity(String cartId, int newQuantity) async {
     if (_isUpdating) return;
 
     setState(() {
@@ -142,7 +142,20 @@ class _CartPageState extends State<CartPage> {
     });
 
     try {
-      await _apiService.updateCartQuantity(cartId, quantity);
+      // 獲取當前商品的數量
+      final currentItem = _cartItems.firstWhere(
+        (item) => item['cart_id'] == cartId,
+        orElse: () => {'quantity': '0'},
+      );
+      final currentQuantity = int.tryParse(currentItem['quantity']?.toString() ?? '0') ?? 0;
+      
+      // 判斷是增加還是減少數量
+      final isIncrease = newQuantity > currentQuantity;
+      
+      // 調用 API 更新數量
+      await _apiService.updateCartQuantity(cartId, newQuantity, isIncrease);
+      
+      // 重新獲取購物車數據
       await _fetchCartData();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

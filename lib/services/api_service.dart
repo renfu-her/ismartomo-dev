@@ -787,7 +787,7 @@ class ApiService {
   }
   
   // 更新購物車中的商品數量
-  Future<Map<String, dynamic>> updateCartQuantity(String cartId, int quantity) async {
+  Future<Map<String, dynamic>> updateCartQuantity(String cartId, int quantity, bool isIncrease) async {
     try {
       // 獲取用戶 ID
       final customerId = await _getCustomerId();
@@ -796,15 +796,13 @@ class ApiService {
       }
       
       // 構建 URL
-      final url = '$_baseUrl/gws_appcustomer_cart/update&customer_id=$customerId&api_key=$_apiKey';
+      final url = '$_baseUrl/gws_appcustomer_cart/edit&customer_id=$customerId&cart_id=$cartId&api_key=$_apiKey';
       
-      // 構建表單數據
+      // 發送 POST 請求，包含數量參數
       final formData = FormData.fromMap({
-        'cart_id': cartId,
         'quantity': quantity.toString(),
       });
       
-      // 發送請求
       final response = await _dio.post(
         url,
         data: formData,
