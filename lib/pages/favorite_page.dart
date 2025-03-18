@@ -64,6 +64,14 @@ class _FavoritePageState extends State<FavoritePage> {
         // 解析收藏列表
         final wishlistItems = List<Map<String, dynamic>>.from(response['customer_wishlist']);
         
+        // 根據 date_added 排序，最新的排在前面
+        wishlistItems.sort((a, b) {
+          final DateTime? dateA = DateTime.tryParse(a['date_added'] ?? '');
+          final DateTime? dateB = DateTime.tryParse(b['date_added'] ?? '');
+          if (dateA == null || dateB == null) return 0;
+          return dateB.compareTo(dateA);
+        });
+        
         // 提取產品ID列表
         final productIds = wishlistItems.map((item) => item['product_id'].toString()).toList();
         
@@ -79,8 +87,7 @@ class _FavoritePageState extends State<FavoritePage> {
         // 獲取每個產品的詳細信息
         List<Map<String, dynamic>> products = [];
         
-        // 為了避免過多的API請求，我們可以使用批量獲取產品的API
-        // 但如果沒有這樣的API，我們可以逐個獲取
+        // 按照排序後的順序獲取產品詳情
         for (String productId in productIds) {
           try {
             final productResponse = await _apiService.getProductDetails(productId);
