@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../services/api_service.dart';
 import 'checkout_page.dart';
+import 'product_detail_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({super.key});
@@ -409,187 +410,206 @@ class _CartPageState extends State<CartPage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 商品圖片
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: SizedBox(
-                width: 80,
-                height: 80,
-                child: Image.network(
-                  item['thumb'] ?? '',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.image_not_supported, color: Colors.grey),
-                    );
-                  },
+      child: InkWell(
+        onTap: () {
+          // 跳轉到產品詳情頁面
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ProductDetailPage(
+                productDetails: {
+                  'product_id': item['product_id'],
+                  'name': item['name'],
+                  'thumb': item['thumb'],
+                  'price': item['price'],
+                  'quantity': item['quantity'],
+                  'options': item['option'],
+                },
+              ),
+            ),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 商品圖片
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: Image.network(
+                    item['thumb'] ?? '',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey[200],
+                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            
-            const SizedBox(width: 12),
-            
-            // 商品信息
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 商品名稱 - 使用HTML實體轉換
-                  Text(
-                    _decodeHtmlEntities(item['name'] ?? '未知商品'),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+              
+              const SizedBox(width: 12),
+              
+              // 商品信息
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 商品名稱 - 使用HTML實體轉換
+                    Text(
+                      _decodeHtmlEntities(item['name'] ?? '未知商品'),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  
-                  const SizedBox(height: 4),
-                  
-                  // 產品ID (設置為白色，實際上是隱藏)
-                  Text(
-                    'ID: ${item['product_id']}',
-                    style: const TextStyle(
-                      fontSize: 1,
-                      color: Colors.white,
+                    
+                    const SizedBox(height: 4),
+                    
+                    // 產品ID (設置為白色，實際上是隱藏)
+                    Text(
+                      'ID: ${item['product_id']}',
+                      style: const TextStyle(
+                        fontSize: 1,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // 產品選項 - 顯示在單價上方
-                  if (options.isNotEmpty) ...[
-                    ...options.map((option) => Container(
-                      margin: const EdgeInsets.only(bottom: 4.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${option['name']}: ',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              option['value'] ?? '',
+                    
+                    const SizedBox(height: 8),
+                    
+                    // 產品選項 - 顯示在單價上方
+                    if (options.isNotEmpty) ...[
+                      ...options.map((option) => Container(
+                        margin: const EdgeInsets.only(bottom: 4.0),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${option['name']}: ',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[800],
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    )).toList(),
-                    
-                    // 如果有選項，添加一個分隔線
-                    Divider(color: Colors.grey[200], height: 16),
-                  ],
-                  
-                  // 價格和數量
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // 價格
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '單價: ${item['price'] ?? ''}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Text(
+                                option['value'] ?? '',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
                             ),
-                          ),
-                          Text(
-                            '小計: ${item['total'] ?? ''}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.red,
-                            ),
-                          ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      )).toList(),
                       
-                      // 數量調整
-                      Row(
-                        children: [
-                          // 減號按鈕
-                          InkWell(
-                            onTap: () {
-                              if (quantity > 1) {
-                                _updateCartItemQuantity(item['cart_id'], quantity - 1);
-                              }
-                            },
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.remove, size: 16),
-                            ),
-                          ),
-                          
-                          // 數量顯示
-                          Container(
-                            width: 40,
-                            height: 28,
-                            alignment: Alignment.center,
-                            child: Text(
-                              quantity.toString(),
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                          
-                          // 加號按鈕
-                          InkWell(
-                            onTap: () {
-                              _updateCartItemQuantity(item['cart_id'], quantity + 1);
-                            },
-                            child: Container(
-                              width: 28,
-                              height: 28,
-                              decoration: BoxDecoration(
-                                border: Border.all(color: Colors.grey.shade300),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Icon(Icons.add, size: 16),
-                            ),
-                          ),
-                        ],
-                      ),
+                      // 如果有選項，添加一個分隔線
+                      Divider(color: Colors.grey[200], height: 16),
                     ],
-                  ),
-                ],
+                    
+                    // 價格和數量
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // 價格
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '單價: ${item['price'] ?? ''}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '小計: ${item['total'] ?? ''}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        // 數量調整
+                        Row(
+                          children: [
+                            // 減號按鈕
+                            InkWell(
+                              onTap: () {
+                                if (quantity > 1) {
+                                  _updateCartItemQuantity(item['cart_id'], quantity - 1);
+                                }
+                              },
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.shade300),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.remove, size: 16),
+                              ),
+                            ),
+                            
+                            // 數量顯示
+                            Container(
+                              width: 40,
+                              height: 28,
+                              alignment: Alignment.center,
+                              child: Text(
+                                quantity.toString(),
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ),
+                            
+                            // 加號按鈕
+                            InkWell(
+                              onTap: () {
+                                _updateCartItemQuantity(item['cart_id'], quantity + 1);
+                              },
+                              child: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.shade300),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                alignment: Alignment.center,
+                                child: const Icon(Icons.add, size: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-            
-            // 刪除按鈕
-            InkWell(
-              onTap: () {
-                _removeCartItem(item['cart_id']);
-              },
-              child: const Padding(
-                padding: EdgeInsets.all(4.0),
-                child: Icon(Icons.delete_outline, color: Colors.grey),
+              
+              // 刪除按鈕
+              InkWell(
+                onTap: () {
+                  _removeCartItem(item['cart_id']);
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: Icon(Icons.delete_outline, color: Colors.grey),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
