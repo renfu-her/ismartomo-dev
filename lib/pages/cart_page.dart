@@ -318,7 +318,7 @@ class _CartPageState extends State<CartPage> {
               child: OutlinedButton(
                 onPressed: () {
                   // 切換到首頁
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
                 },
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: Colors.grey[400]!),
@@ -327,7 +327,7 @@ class _CartPageState extends State<CartPage> {
                   ),
                 ),
                 child: const Text(
-                  '逛逛賣場',
+                  '回首頁',
                   style: TextStyle(
                     fontSize: 18,
                     color: Colors.black87,

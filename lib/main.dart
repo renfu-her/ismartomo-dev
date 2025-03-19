@@ -19,6 +19,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'pages/search_page.dart';
 
 // 全局 SharedPreferences 實例
 late SharedPreferences prefs;
@@ -275,9 +276,9 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              // 搜索功能
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('搜索功能待實現')),
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SearchPage()),
               );
             },
           ),
