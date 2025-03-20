@@ -262,8 +262,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
           separatorBuilder: (context, index) => const Divider(),
           itemBuilder: (context, index) {
             final product = _products[index];
-            final name = product['name'] ?? '';
-            final model = product['model'] ?? '';
+            final name = _formatSpecialCharacters(product['name'] ?? '');
             final quantity = product['quantity'] ?? '';
             final price = product['price'] ?? '';
             final total = product['total'] ?? '';
@@ -318,15 +317,34 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '型號: $model',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      if (product['option'] != null && (product['option'] as List).isNotEmpty)
+                        ...(product['option'] as List).map((option) => Padding(
+                          padding: const EdgeInsets.only(bottom: 2),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${option['name']}: ',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  option['value'] ?? '',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[700],
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )).toList(),
                       const SizedBox(height: 8),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -602,5 +620,64 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     } else {
       return Icons.help;
     }
+  }
+
+  String _formatSpecialCharacters(String text) {
+    if (text.isEmpty) {
+      return '';
+    }
+    
+    final Map<String, String> htmlEntities = {
+      '&quot;': '"',
+      '&amp;': '&',
+      '&lt;': '<',
+      '&gt;': '>',
+      '&apos;': "'",
+      '&#39;': "'",
+      '&lsquo;': "'",
+      '&rsquo;': "'",
+      '&ldquo;': '"',
+      '&rdquo;': '"',
+      '&ndash;': '–',
+      '&mdash;': '—',
+      '&nbsp;': ' ',
+      '&iexcl;': '¡',
+      '&cent;': '¢',
+      '&pound;': '£',
+      '&curren;': '¤',
+      '&yen;': '¥',
+      '&brvbar;': '¦',
+      '&sect;': '§',
+      '&uml;': '¨',
+      '&copy;': '©',
+      '&ordf;': 'ª',
+      '&laquo;': '«',
+      '&not;': '¬',
+      '&reg;': '®',
+      '&macr;': '¯',
+      '&deg;': '°',
+      '&plusmn;': '±',
+      '&sup2;': '²',
+      '&sup3;': '³',
+      '&acute;': '´',
+      '&micro;': 'µ',
+      '&para;': '¶',
+      '&middot;': '·',
+      '&cedil;': '¸',
+      '&sup1;': '¹',
+      '&ordm;': 'º',
+      '&raquo;': '»',
+      '&frac14;': '¼',
+      '&frac12;': '½',
+      '&frac34;': '¾',
+      '&iquest;': '¿',
+    };
+    
+    String result = text;
+    htmlEntities.forEach((entity, char) {
+      result = result.replaceAll(entity, char);
+    });
+    
+    return result;
   }
 } 
