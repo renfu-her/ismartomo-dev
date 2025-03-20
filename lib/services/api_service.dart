@@ -179,74 +179,21 @@ class ApiService {
   // 搜尋產品
   Future<Map<String, dynamic>> searchProducts(String keyword) async {
     try {
-      // 獲取用戶 ID
-      final customerId = await _getCustomerId();
+      final userId = await _getCustomerId();
+      final url = '$_baseUrl/gws_appproducts/search&search=${Uri.encodeComponent(keyword)}&api_key=$_apiKey';
+      final finalUrl = userId != null ? '$url&customer_id=$userId' : url;
       
-      // 構建 URL 獲取所有產品
-      String url = '$_baseUrl/gws_products&api_key=$_apiKey';
+      final response = await _dio.get(finalUrl);
       
-      // 如果有用戶 ID，添加到 URL
-      if (customerId != null && customerId.isNotEmpty) {
-        url += '&customer_id=$customerId';
+      if (response.data is Map) {
+        return response.data;
+      } else if (response.data is String) {
+        return {'message': response.data};
+      } else {
+        throw Exception('無效的響應格式');
       }
-      
-      // 發送請求獲取所有產品
-      final response = await _dio.get(
-        url,
-        options: Options(
-          followRedirects: false,
-          validateStatus: (status) {
-            return status != null && status < 500;
-          },
-        ),
-      );
-      
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data;
-        if (response.data is Map) {
-          data = response.data;
-        } else if (response.data is String) {
-          data = json.decode(response.data);
-        } else {
-          throw Exception('無效的數據格式');
-        }
-        
-        // 確保有產品數據
-        if (data.containsKey('products') && data['products'] is List) {
-          final List<dynamic> allProducts = data['products'];
-          
-          // 如果關鍵字為空，返回所有產品
-          if (keyword.isEmpty) {
-            return data;
-          }
-          
-          // 在前端進行關鍵字過濾
-          final List<dynamic> filteredProducts = allProducts.where((product) {
-            // 將產品名稱和描述轉為小寫進行比對
-            final String name = (product['name'] ?? '').toLowerCase();
-            final String description = (product['description'] ?? '').toLowerCase();
-            final String searchKeyword = keyword.toLowerCase();
-            
-            // 檢查名稱或描述是否包含關鍵字
-            return name.contains(searchKeyword) || description.contains(searchKeyword);
-          }).toList();
-          
-          // 返回過濾後的結果
-          return {
-            'message': [
-              {
-                'msg': '${filteredProducts.length} products found.',
-                'msg_status': true
-              }
-            ],
-            'products': filteredProducts,
-          };
-        }
-      }
-      
-      throw Exception('無效的數據格式');
     } catch (e) {
-      throw Exception('搜尋產品失敗: ${e.toString()}');
+      throw Exception('搜尋產品時發生錯誤: $e');
     }
   }
   
