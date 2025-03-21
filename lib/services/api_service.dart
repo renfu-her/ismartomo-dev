@@ -1040,4 +1040,13 @@ class ApiService {
       return {'error': true, 'message': [{'msg': '訂單提交失敗: ${e.toString()}', 'msg_status': false}]};
     }
   }
+  
+  // 獲取折價券列表
+  Future<Map<String, dynamic>> getCoupons() async {
+    try {
+      return _get('gws_coupon');
+    } catch (e) {
+      throw Exception('獲取折價券列表失敗: ${e.toString()}');
+    }
+  }
 } 

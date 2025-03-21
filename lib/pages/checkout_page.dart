@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/ecpay_service.dart';
 import 'dart:convert';
+import 'address_list_page.dart';
 
 class CheckoutPage extends StatefulWidget {
   const CheckoutPage({super.key});
@@ -57,6 +58,18 @@ class _CheckoutPageState extends State<CheckoutPage> {
   // 免運費門檻
   final double _freeShippingThreshold = 1000.0;
 
+  // 新增折價券相關變數
+  List<Map<String, dynamic>> _coupons = [];
+  Map<String, dynamic>? _selectedCoupon;
+  TextEditingController _couponController = TextEditingController();
+  bool _isLoadingCoupon = false;
+
+  @override
+  void dispose() {
+    _couponController.dispose();
+    super.dispose();
+  }
+
   // 輔助方法：將HTML實體轉換為實際字符
   String _decodeHtmlEntities(String text) {
     if (text.isEmpty) {
@@ -75,6 +88,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     super.initState();
     _fetchData();
     _initEcpaySettings();
+    _fetchCoupons();
   }
   
   // 初始化綠界支付設置
@@ -155,6 +169,115 @@ class _CheckoutPageState extends State<CheckoutPage> {
         _errorMessage = '獲取數據失敗: ${e.toString()}';
       });
     }
+  }
+  
+  // 獲取折價券列表
+  Future<void> _fetchCoupons() async {
+    try {
+      final response = await _apiService.getCoupons();
+      if (response.containsKey('coupons') && response['coupons'] is List) {
+        setState(() {
+          _coupons = List<Map<String, dynamic>>.from(response['coupons']);
+        });
+      }
+    } catch (e) {
+      debugPrint('獲取折價券失敗: ${e.toString()}');
+    }
+  }
+  
+  // 驗證折價券
+  void _validateCoupon(String code) {
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('請輸入折價券代碼')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoadingCoupon = true;
+    });
+
+    // 在折價券列表中查找匹配的折價券
+    final now = DateTime.now();
+    final coupon = _coupons.firstWhere(
+      (coupon) {
+        final dateStart = DateTime.parse(coupon['date_start']);
+        final dateEnd = DateTime.parse(coupon['date_end']);
+        return coupon['code'] == code &&
+               coupon['status'] == 'Enabled' &&
+               now.isAfter(dateStart) &&
+               now.isBefore(dateEnd);
+      },
+      orElse: () => <String, dynamic>{},
+    );
+
+    if (coupon.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('無效的折價券代碼或已過期')),
+      );
+      setState(() {
+        _isLoadingCoupon = false;
+        _selectedCoupon = null;
+      });
+      return;
+    }
+
+    // 檢查訂單金額是否達到折價券使用門檻
+    double orderTotal = 0.0;
+    for (var item in _cartItems) {
+      String totalStr = item['total'] ?? '';
+      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double total = double.tryParse(totalStr) ?? 0.0;
+      orderTotal += total;
+    }
+
+    final couponMinTotal = double.tryParse(coupon['total'] ?? '0') ?? 0.0;
+    if (orderTotal < couponMinTotal) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('訂單金額需滿 NT\$${couponMinTotal.toInt()} 才能使用此折價券')),
+      );
+      setState(() {
+        _isLoadingCoupon = false;
+        _selectedCoupon = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingCoupon = false;
+      _selectedCoupon = coupon;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('折價券已套用')),
+    );
+  }
+  
+  // 計算折扣金額
+  double _calculateDiscount() {
+    if (_selectedCoupon == null) return 0.0;
+
+    double orderTotal = 0.0;
+    for (var item in _cartItems) {
+      String totalStr = item['total'] ?? '';
+      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
+      double total = double.tryParse(totalStr) ?? 0.0;
+      orderTotal += total;
+    }
+
+    final type = _selectedCoupon!['type'];
+    final discount = double.tryParse(_selectedCoupon!['discount'] ?? '0') ?? 0.0;
+
+    if (type == 'F') {
+      // 固定金額折扣
+      return discount;
+    } else if (type == 'P') {
+      // 百分比折扣
+      return (orderTotal * discount / 100);
+    }
+
+    return 0.0;
   }
   
   @override
@@ -405,11 +528,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 children: [
                   const Icon(Icons.location_on, color: Colors.blue),
                   const SizedBox(width: 8),
-                  const Text(
-                    '選擇收件地址',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  const Expanded(
+                    child: Text(
+                      '選擇收件地址',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  // 新增地址按鈕
+                  TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('新增'),
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddressListPage(),
+                        ),
+                      );
+                      if (result == true) {
+                        _fetchData();
+                      }
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
                     ),
                   ),
                 ],
@@ -585,60 +730,135 @@ class _CheckoutPageState extends State<CheckoutPage> {
             
             const Divider(height: 32),
             
-            // 訂單總計
-            ..._totals.map((total) {
-              // 只顯示小計，忽略其他項目
-              if (total['code'] == 'sub_total') {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            // 折價券輸入區域
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '使用折價券',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
                     children: [
-                      const Text(
-                        '商品合計',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.normal,
+                      Expanded(
+                        child: TextField(
+                          controller: _couponController,
+                          decoration: const InputDecoration(
+                            hintText: '請輸入折價券代碼',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                            filled: true,
+                            fillColor: Colors.white,
+                          ),
                         ),
                       ),
-                      Text(
-                        _decodeHtmlEntities(total['text'] ?? ''),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.black,
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _isLoadingCoupon
+                            ? null
+                            : () => _validateCoupon(_couponController.text.trim()),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
                         ),
+                        child: _isLoadingCoupon
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text('套用'),
                       ),
                     ],
                   ),
-                );
-              }
-              return const SizedBox.shrink();
-            }).toList(),
-            
-            // 運費
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Row(
+                ],
+              ),
+            ),
+
+            // 顯示已套用的折價券
+            if (_selectedCoupon != null) ...[
+              const SizedBox(height: 8),
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    '運費',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.normal,
+                  Expanded(
+                    child: Text(
+                      '折價券: ${_selectedCoupon!['name']}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.green,
+                      ),
                     ),
                   ),
                   Text(
-                    _calculateShippingFee() > 0 ? 'NT\$${_calculateShippingFee().toInt()}' : '免運費',
-                    style: TextStyle(
+                    '-NT\$${_calculateDiscount().toInt()}',
+                    style: const TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.normal,
-                      color: _calculateShippingFee() > 0 ? Colors.black : Colors.green,
+                      color: Colors.green,
                     ),
                   ),
                 ],
               ),
+            ],
+
+            const SizedBox(height: 16),
+            
+            // 商品合計
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '商品合計',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                Text(
+                  'NT\$${_calculateSubTotal().toInt()}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+            
+            // 運費
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '運費',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                Text(
+                  _calculateShippingFee() > 0 ? 'NT\$${_calculateShippingFee().toInt()}' : '免運費',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
+                    color: _calculateShippingFee() > 0 ? Colors.black : Colors.green,
+                  ),
+                ),
+              ],
             ),
             
             const Divider(height: 24),
@@ -836,8 +1056,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return 60.0;
   }
   
-  String _calculateFinalTotal() {
-    // 計算商品小計
+  double _calculateSubTotal() {
     double subTotal = 0.0;
     for (var item in _cartItems) {
       String totalStr = item['total'] ?? '';
@@ -845,13 +1064,15 @@ class _CheckoutPageState extends State<CheckoutPage> {
       double total = double.tryParse(totalStr) ?? 0.0;
       subTotal += total;
     }
+    return subTotal;
+  }
+  
+  String _calculateFinalTotal() {
+    final subTotal = _calculateSubTotal();
+    final shippingFee = _calculateShippingFee();
+    final discount = _calculateDiscount();
     
-    // 計算運費
-    final double shippingFee = _calculateShippingFee();
-    
-    // 加上運費
-    final double finalTotal = subTotal + shippingFee;
-    
+    final finalTotal = subTotal + shippingFee - discount;
     return 'NT\$${finalTotal.toInt()}';
   }
   
