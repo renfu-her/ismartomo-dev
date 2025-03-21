@@ -850,6 +850,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
               ],
             ),
 
+            // 檢查是否有折價券
+            if (_totals.any((total) => total['code'] == 'coupon')) ...[
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _totals.firstWhere((total) => total['code'] == 'coupon')['title'] ?? '折價券',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.green,
+                    ),
+                  ),
+                  Text(
+                    _totals.firstWhere((total) => total['code'] == 'coupon')['text'] ?? '',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+
             const SizedBox(height: 8),
             
             // 運費
@@ -1158,216 +1184,72 @@ class _CheckoutPageState extends State<CheckoutPage> {
           response['message'][0].containsKey('msg_status') &&
           response['message'][0]['msg_status'] == true) {
         
-        // 獲取訂單ID
-        String orderId = '';
-        if (response.containsKey('order') && response['order'] is Map && response['order'].containsKey('order_id')) {
-          orderId = response['order']['order_id'].toString();
-        } else if (response['message'][0].containsKey('msg')) {
-          // 嘗試從消息中提取訂單ID
-          final msgText = response['message'][0]['msg'].toString();
-          final orderIdMatch = RegExp(r'Order ID: (\d+)').firstMatch(msgText);
-          if (orderIdMatch != null && orderIdMatch.groupCount >= 1) {
-            orderId = orderIdMatch.group(1) ?? '';
-          }
+        // 清空購物車
+        try {
+          await _apiService.clearCart(customerId);
+        } catch (e) {
+          debugPrint('清空購物車失敗: ${e.toString()}');
         }
         
-        // 如果選擇了綠界支付，則處理綠界支付
-        if (_selectedPaymentMethod == 'ecpaypayment' && orderId.isNotEmpty) {
-          debugPrint('處理綠界支付，訂單ID: $orderId');
-          
-          // 初始化綠界支付設置
-          await _ecpayService.initEcpaySettings();
-          
-          // 計算訂單總金額（不含小數點）
-          String totalAmount = _calculateFinalTotal().replaceAll(RegExp(r'[^\d]'), '');
-          
-          // 確保總金額不為空且至少為 1
-          if (totalAmount.isEmpty || totalAmount == '0') {
-            totalAmount = '1';
-          }
-          
-          debugPrint('訂單總金額: $totalAmount');
-          
-          // 構建商品名稱（最多三個商品，其餘顯示為"等多項商品"）
-          String itemName = '';
-          int itemCount = 0;
-          for (var item in _cartItems) {
-            if (itemCount < 3) {
-              if (itemName.isNotEmpty) {
-                itemName += '#';
-              }
-              itemName += _decodeHtmlEntities(item['name'] ?? '未知商品');
-              itemCount++;
-            } else {
-              itemName += '等多項商品';
-              break;
-            }
-          }
-          
-          // 如果沒有商品，使用默認名稱
-          if (itemName.isEmpty) {
-            itemName = '網路商店訂單';
-          }
-          
-          debugPrint('商品名稱: $itemName');
-          
-          // 生成唯一的訂單編號 (使用時間戳確保唯一性)
-          final String uniqueOrderId = 'OD${DateTime.now().millisecondsSinceEpoch.toString().substring(0, 10)}';
-          
-          debugPrint('綠界支付訂單編號: $uniqueOrderId');
-          
-          // 處理綠界支付
-          _ecpayService.processEcpayPayment(
-            context: context,
-            orderId: uniqueOrderId,
-            totalAmount: totalAmount,
-            itemName: itemName,
-            onPaymentComplete: (bool success, String? message) async {
-              if (success) {
-                // 支付成功，清空購物車
-                try {
-                  // 顯示清空購物車的加載指示器
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (BuildContext context) {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    },
-                  );
-                  
-                  // 遍歷購物車中的所有商品，並移除
-                  for (var item in _cartItems) {
-                    final cartId = item['cart_id']?.toString() ?? '';
-                    if (cartId.isNotEmpty) {
-                      await _apiService.removeFromCart(cartId);
-                    }
-                  }
-                  
-                  // 關閉清空購物車的加載指示器
-                  Navigator.of(context, rootNavigator: true).pop();
-                } catch (e) {
-                  // 如果清空購物車失敗，只記錄錯誤，不影響訂單提交成功的流程
-                  debugPrint('清空購物車失敗: ${e.toString()}');
-                  
-                  // 關閉可能存在的加載指示器
-                  Navigator.of(context, rootNavigator: true).pop();
-                }
-                
-                // 顯示成功對話框
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('支付成功'),
-                      content: Text('您的訂單已成功支付，訂單編號: $orderId\n我們將盡快處理您的訂單。'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            // 關閉對話框
-                            Navigator.of(context).pop();
-                            // 返回首頁
-                            Navigator.of(context).popUntil((route) => route.isFirst);
-                            // 顯示訂單成功提示
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('訂單 $orderId 已成功支付'),
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          },
-                          child: const Text('確定'),
-                        ),
-                      ],
+        // 顯示成功對話框
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('訂單提交成功'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('訂單編號: ${response['order']['order_id']}'),
+                    const Divider(),
+                    Text('商店名稱: ${response['order']['store_name']}'),
+                    const SizedBox(height: 8),
+                    const Text('客戶資訊:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('姓名: ${response['order']['lastname']} ${response['order']['firstname']}'),
+                    Text('電話: ${response['order']['telephone']}'),
+                    Text('Email: ${response['order']['email']}'),
+                    const Divider(),
+                    const Text('收件資訊:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('收件人: ${response['order']['shipping_lastname']} ${response['order']['shipping_firstname']}'),
+                    Text('地址: ${response['order']['shipping_zone']} ${response['order']['shipping_address_1']}'),
+                    if (response['order']['shipping_pickupstore']?.isNotEmpty ?? false)
+                      Text('取貨門市: ${response['order']['shipping_pickupstore']}'),
+                    const Divider(),
+                    const Text('付款資訊:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('付款方式: ${response['order']['payment_method']}'),
+                    Text('訂單狀態: ${response['order']['order_status']}'),
+                    const Divider(),
+                    const Text('金額資訊:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('訂單總額: NT\$${double.parse(response['order']['total']).toInt()}'),
+                    const SizedBox(height: 8),
+                    Text('訂單時間: ${response['order']['date_added']}'),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    // 關閉對話框
+                    Navigator.of(context).pop();
+                    // 返回首頁
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                    // 顯示訂單成功提示
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('訂單 ${response['order']['order_id']} 已成功建立'),
+                        duration: const Duration(seconds: 3),
+                      ),
                     );
                   },
-                );
-              } else {
-                // 支付失敗
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('支付失敗'),
-                      content: Text(message ?? '支付過程中發生錯誤'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('確定'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-            },
-          );
-        } else {
-          // 非綠界支付，訂單提交成功後，清空購物車
-          try {
-            // 顯示清空購物車的加載指示器
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (BuildContext context) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              },
+                  child: const Text('確定'),
+                ),
+              ],
             );
-            
-            // 遍歷購物車中的所有商品，並移除
-            for (var item in _cartItems) {
-              final cartId = item['cart_id']?.toString() ?? '';
-              if (cartId.isNotEmpty) {
-                await _apiService.removeFromCart(cartId);
-              }
-            }
-            
-            // 關閉清空購物車的加載指示器
-            Navigator.of(context, rootNavigator: true).pop();
-          } catch (e) {
-            // 如果清空購物車失敗，只記錄錯誤，不影響訂單提交成功的流程
-            debugPrint('清空購物車失敗: ${e.toString()}');
-            
-            // 關閉可能存在的加載指示器
-            Navigator.of(context, rootNavigator: true).pop();
-          }
-          
-          // 顯示成功對話框
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('訂單提交成功'),
-                content: Text('您的訂單已成功提交，訂單編號: $orderId\n我們將盡快處理您的訂單。'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      // 關閉對話框
-                      Navigator.of(context).pop();
-                      // 返回首頁
-                      Navigator.of(context).popUntil((route) => route.isFirst);
-                      // 顯示訂單成功提示
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('訂單 $orderId 已成功建立'),
-                          duration: const Duration(seconds: 3),
-                        ),
-                      );
-                    },
-                    child: const Text('確定'),
-                  ),
-                ],
-              );
-            },
-          );
-        }
+          },
+        );
       } else {
         // 獲取錯誤消息
         String errorMessage = '結帳系統失敗';
@@ -1513,10 +1395,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
       orderData['products[$i][quantity]'] = item['quantity']?.toString() ?? '1';
       orderData['products[$i][price]'] = price.toString();
       orderData['products[$i][total]'] = total.toString();
-      orderData['products[$i][tax_class_id]'] = '0'; // 不使用稅金
-      orderData['products[$i][download]'] = ''; // 添加下載欄位
+      orderData['products[$i][tax_class_id]'] = '0';
+      orderData['products[$i][download]'] = '';
       orderData['products[$i][subtract]'] = '1';
-      orderData['products[$i][reward]'] = '0'; // 添加獎勵點數欄位
+      orderData['products[$i][reward]'] = '0';
       
       // 處理商品選項
       if (item.containsKey('option') && item['option'] is List) {
@@ -1531,43 +1413,59 @@ class _CheckoutPageState extends State<CheckoutPage> {
         }
       }
     }
+
+    // 計算各項金額
+    final double subTotal = _calculateSubTotal();
+    final double shippingFee = _calculateShippingFee();
+    final double discount = _totals.any((total) => total['code'] == 'coupon')
+        ? double.tryParse(_totals.firstWhere((total) => total['code'] == 'coupon')['text']?.replaceAll(RegExp(r'[^-\d.]'), '') ?? '0') ?? 0.0
+        : 0.0;
+    final double finalTotal = subTotal + shippingFee + discount; // discount 已經是負數，所以用加的
+
+    // 設置訂單總金額（加上 .0000 格式）
+    orderData['total'] = '${finalTotal.abs().toStringAsFixed(4)}';
     
-    // 計算商品小計（不含運費）
-    double subTotal = 0.0;
-    for (var item in _cartItems) {
-      String totalStr = item['total'] ?? '';
-      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
-      double total = double.tryParse(totalStr) ?? 0.0;
-      subTotal += total;
+    // 設置運費資訊
+    if (shippingFee > 0) {
+      orderData['shipping_method'] = '一般運費';
+      orderData['shipping_code'] = 'shipping.regular';
+    } else {
+      orderData['shipping_method'] = '免運費';
+      orderData['shipping_code'] = 'shipping.free';
     }
     
-    // 計算運費
-    final double shippingFeeValue = _calculateShippingFee();
+    // 重新構建訂單摘要
+    int totalIndex = 0;
     
-    // 計算最終總金額（商品小計 + 運費）
-    final double finalTotal = subTotal + shippingFeeValue;
+    // 1. 商品合計
+    orderData['totals[$totalIndex][code]'] = 'sub_total';
+    orderData['totals[$totalIndex][title]'] = '商品合計';
+    orderData['totals[$totalIndex][value]'] = subTotal.toString();
+    orderData['totals[$totalIndex][sort_order]'] = '${totalIndex + 1}';
+    totalIndex++;
     
-    // 設置訂單總金額
-    orderData['total'] = finalTotal.toString();
+    // 2. 折價券（如果有）
+    if (_totals.any((total) => total['code'] == 'coupon')) {
+      final couponTotal = _totals.firstWhere((total) => total['code'] == 'coupon');
+      orderData['totals[$totalIndex][code]'] = 'coupon';
+      orderData['totals[$totalIndex][title]'] = couponTotal['title'] ?? '折價券';
+      orderData['totals[$totalIndex][value]'] = discount.toString();
+      orderData['totals[$totalIndex][sort_order]'] = '${totalIndex + 1}';
+      totalIndex++;
+    }
     
-    // 重新構建訂單摘要，只包含小計、運費和總計
-    // 1. 小計
-    orderData['totals[0][code]'] = 'sub_total';
-    orderData['totals[0][title]'] = '小計';
-    orderData['totals[0][value]'] = subTotal.toString();
-    orderData['totals[0][sort_order]'] = '1';
+    // 3. 運費
+    orderData['totals[$totalIndex][code]'] = 'shipping';
+    orderData['totals[$totalIndex][title]'] = shippingFee > 0 ? '一般運費' : '免運費';
+    orderData['totals[$totalIndex][value]'] = shippingFee.toString();
+    orderData['totals[$totalIndex][sort_order]'] = '${totalIndex + 1}';
+    totalIndex++;
     
-    // 2. 運費
-    orderData['totals[1][code]'] = 'shipping';
-    orderData['totals[1][title]'] = shippingFeeValue > 0 ? '一般運費' : '免運費';
-    orderData['totals[1][value]'] = shippingFeeValue.toString();
-    orderData['totals[1][sort_order]'] = '2';
-    
-    // 3. 總計
-    orderData['totals[2][code]'] = 'total';
-    orderData['totals[2][title]'] = '總計';
-    orderData['totals[2][value]'] = finalTotal.toString();
-    orderData['totals[2][sort_order]'] = '3';
+    // 4. 總計
+    orderData['totals[$totalIndex][code]'] = 'total';
+    orderData['totals[$totalIndex][title]'] = '訂單總計';
+    orderData['totals[$totalIndex][value]'] = finalTotal.toString();
+    orderData['totals[$totalIndex][sort_order]'] = '${totalIndex + 1}';
       
     return orderData;
   }

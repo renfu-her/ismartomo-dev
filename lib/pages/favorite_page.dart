@@ -25,6 +25,8 @@ class _FavoritePageState extends State<FavoritePage> {
   }
 
   Future<void> _fetchFavoriteProducts() async {
+    if (!mounted) return;  // 添加 mounted 檢查
+    
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -35,6 +37,7 @@ class _FavoritePageState extends State<FavoritePage> {
       final userService = Provider.of<UserService>(context, listen: false);
       
       // 檢查用戶是否已登入
+      if (!mounted) return;  // 添加 mounted 檢查
       if (!userService.isLoggedIn) {
         setState(() {
           _isLoading = false;
@@ -47,6 +50,7 @@ class _FavoritePageState extends State<FavoritePage> {
       final userData = await userService.getUserData();
       final customerId = userData['customer_id'];
 
+      if (!mounted) return;  // 添加 mounted 檢查
       if (customerId == null || customerId.isEmpty) {
         setState(() {
           _isLoading = false;
@@ -58,6 +62,8 @@ class _FavoritePageState extends State<FavoritePage> {
       // 獲取收藏列表
       final response = await _apiService.getCustomerWishlist(customerId);
 
+      if (!mounted) return;  // 添加 mounted 檢查
+      
       if (response.containsKey('customer_wishlist') && 
           response['customer_wishlist'] is List) {
         
@@ -76,6 +82,7 @@ class _FavoritePageState extends State<FavoritePage> {
         final productIds = wishlistItems.map((item) => item['product_id'].toString()).toList();
         
         // 如果沒有收藏的產品
+        if (!mounted) return;  // 添加 mounted 檢查
         if (productIds.isEmpty) {
           setState(() {
             _isLoading = false;
@@ -89,6 +96,7 @@ class _FavoritePageState extends State<FavoritePage> {
         
         // 按照排序後的順序獲取產品詳情
         for (String productId in productIds) {
+          if (!mounted) return;  // 添加 mounted 檢查
           try {
             final productResponse = await _apiService.getProductDetails(productId);
             if (productResponse.containsKey('product') && 
@@ -101,17 +109,20 @@ class _FavoritePageState extends State<FavoritePage> {
           }
         }
         
+        if (!mounted) return;  // 添加 mounted 檢查
         setState(() {
           _isLoading = false;
           _favoriteProducts = products;
         });
       } else {
+        if (!mounted) return;  // 添加 mounted 檢查
         setState(() {
           _isLoading = false;
           _favoriteProducts = [];
         });
       }
     } catch (e) {
+      if (!mounted) return;  // 添加 mounted 檢查
       setState(() {
         _isLoading = false;
         _errorMessage = '獲取收藏列表失敗: ${e.toString()}';

@@ -1067,4 +1067,30 @@ class ApiService {
       throw Exception('獲取折價券列表失敗: ${e.toString()}');
     }
   }
+  
+  // 清空購物車
+  Future<void> clearCart(String customerId) async {
+    try {
+      // 先獲取購物車列表
+      final cartResponse = await _get('gws_appcustomer_cart', extraParams: {'customer_id': customerId});
+      
+      if (cartResponse.containsKey('customer_cart') && cartResponse['customer_cart'] is List) {
+        final cartItems = List<Map<String, dynamic>>.from(cartResponse['customer_cart']);
+        
+        // 逐個移除購物車商品
+        for (var item in cartItems) {
+          final cartId = item['cart_id']?.toString();
+          if (cartId != null) {
+            // 使用正確的 API 路徑和參數
+            await _get('gws_appcustomer_cart/remove', extraParams: {
+              'customer_id': customerId,
+              'cart_id': cartId
+            });
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception('清空購物車失敗: ${e.toString()}');
+    }
+  }
 } 
