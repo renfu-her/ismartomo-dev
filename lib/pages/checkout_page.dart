@@ -209,14 +209,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
             _buildAddressCard(),
             const SizedBox(height: 24),
             
-            // 3. 選擇貨運方式
-            _buildSectionTitle('3. 選擇貨運方式'),
-            const SizedBox(height: 8),
-            _buildShippingMethod(),
-            const SizedBox(height: 24),
-            
-            // 4. 確認訂單內容
-            _buildSectionTitle('4. 確認訂單內容'),
+            // 3. 確認訂單內容
+            _buildSectionTitle('3. 確認訂單內容'),
             const SizedBox(height: 8),
             _buildOrderSummary(),
             const SizedBox(height: 32),
@@ -575,53 +569,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     return zoneMap[zoneId] ?? '';
   }
   
-  Widget _buildShippingMethod() {
-    return Card(
-      color: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            const Icon(Icons.local_shipping, color: Colors.blue),
-            const SizedBox(width: 16),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '標準配送',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    '3-5 個工作日送達',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Text(
-              'NT\$${_shippingFee.toInt()}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
   Widget _buildOrderSummary() {
     return Card(
       color: Colors.white,
@@ -640,31 +587,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
             
             // 訂單總計
             ..._totals.map((total) {
-              final bool isTotal = total['code'] == 'total';
-              
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _decodeHtmlEntities(total['title'] ?? ''),
-                      style: TextStyle(
-                        fontSize: isTotal ? 16 : 14,
-                        fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              // 只顯示小計，忽略其他項目
+              if (total['code'] == 'sub_total') {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '商品合計',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                        ),
                       ),
-                    ),
-                    Text(
-                      _decodeHtmlEntities(total['text'] ?? ''),
-                      style: TextStyle(
-                        fontSize: isTotal ? 18 : 14,
-                        fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-                        color: isTotal ? Colors.red : Colors.black,
+                      Text(
+                        _decodeHtmlEntities(total['text'] ?? ''),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          color: Colors.black,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
             }).toList(),
             
             // 運費
@@ -673,10 +622,21 @@ class _CheckoutPageState extends State<CheckoutPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('運費'),
-                  _calculateShippingFee() > 0
-                    ? Text('NT\$${_calculateShippingFee().toInt()}')
-                    : const Text('免運費', style: TextStyle(color: Colors.green)),
+                  const Text(
+                    '運費',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  Text(
+                    _calculateShippingFee() > 0 ? 'NT\$${_calculateShippingFee().toInt()}' : '免運費',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.normal,
+                      color: _calculateShippingFee() > 0 ? Colors.black : Colors.green,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1298,11 +1258,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // 額外的地址欄位（可能不是標準欄位，但您的系統需要）
     orderData['shipping_address[cellphone]'] = _addressData['cellphone'] ?? '';
     orderData['shipping_address[pickupstore]'] = _addressData['pickupstore'] ?? '';
-    
-    // 配送方式
-    final shippingFee = _calculateShippingFee();
-    orderData['shipping_method[title]'] = shippingFee > 0 ? '一般運費' : '免運費';
-    orderData['shipping_method[code]'] = shippingFee > 0 ? 'shipping.flat' : 'shipping.free';
     
     // 商品信息
     for (int i = 0; i < _cartItems.length; i++) {
