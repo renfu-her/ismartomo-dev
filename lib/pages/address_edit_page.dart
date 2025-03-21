@@ -24,6 +24,8 @@ class _AddressEditPageState extends State<AddressEditPage> {
   final TextEditingController _lastnameController = TextEditingController();
   final TextEditingController _address1Controller = TextEditingController();
   final TextEditingController _address2Controller = TextEditingController();
+  final TextEditingController _cellphoneController = TextEditingController();
+  final TextEditingController _pickupstoreController = TextEditingController();
   
   String _selectedZoneId = '3136'; // 默認為臺北市
   
@@ -69,6 +71,8 @@ class _AddressEditPageState extends State<AddressEditPage> {
     _lastnameController.dispose();
     _address1Controller.dispose();
     _address2Controller.dispose();
+    _cellphoneController.dispose();
+    _pickupstoreController.dispose();
     super.dispose();
   }
   
@@ -106,6 +110,8 @@ class _AddressEditPageState extends State<AddressEditPage> {
         _lastnameController.text = address['lastname'] ?? '';
         _address1Controller.text = address['address_1'] ?? '';
         _address2Controller.text = address['address_2'] ?? '';
+        _cellphoneController.text = address['cellphone'] ?? '';
+        _pickupstoreController.text = address['pickupstore'] ?? '';
         
         // 設置區域
         if (address['zone_id'] != null && address['zone_id'].toString().isNotEmpty) {
@@ -163,7 +169,7 @@ class _AddressEditPageState extends State<AddressEditPage> {
         'customer_id': customerId,
         'firstname': _firstnameController.text,
         'lastname': _lastnameController.text,
-        'cellphone': '', // 設置為空字符串
+        'cellphone': _cellphoneController.text.trim(),
         'company': '',
         'address_1': _address1Controller.text,
         'address_2': _address2Controller.text,
@@ -173,7 +179,10 @@ class _AddressEditPageState extends State<AddressEditPage> {
         'zone_id': _selectedZoneId,
         'default': _isDefault ? '1' : '0',
         'custom_field[1]': '711', // 根據需求設置
+        'pickupstore': _pickupstoreController.text.trim(),
       };
+
+      print(addressData);
       
       // 調用 API 保存地址
       if (widget.addressId == null) {
@@ -254,6 +263,37 @@ class _AddressEditPageState extends State<AddressEditPage> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 手機號碼
+                    TextFormField(
+                      controller: _cellphoneController,
+                      decoration: const InputDecoration(
+                        labelText: '手機號碼',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.phone,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return '請輸入手機號碼';
+                        }
+                        // 驗證手機號碼格式（台灣手機號碼）
+                        if (!RegExp(r'^09\d{8}$').hasMatch(value)) {
+                          return '請輸入正確的手機號碼格式';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // 超商店到店（選填）
+                    TextFormField(
+                      controller: _pickupstoreController,
+                      decoration: const InputDecoration(
+                        labelText: '超商店到店（選填）',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     

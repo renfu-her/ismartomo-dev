@@ -564,7 +564,11 @@ class ApiService {
       final url = '$_baseUrl/gws_customer_address/add&api_key=$_apiKey&customer_id=$customerId';
       
       // 創建 FormData
-      final formData = FormData.fromMap(addressData);
+      final formData = FormData.fromMap({
+        ...addressData,
+        'cellphone': addressData['cellphone'] ?? '',
+        'pickupstore': addressData['pickupstore'] ?? '',
+      });
       
       // 發送請求
       final response = await _dio.post(
@@ -605,11 +609,25 @@ class ApiService {
         throw Exception('地址ID不能為空');
       }
       
-      // 構建 URL
-      final url = '$_baseUrl/gws_customer_address/edit&api_key=$_apiKey&customer_id=$customerId&address_id=$addressId';
+      // 構建 URL - 修改為正確的 API 路徑
+      final url = '$_baseUrl/gws_appcustomer_address/edit&customer_id=$customerId&address_id=$addressId&api_key=$_apiKey';
       
-      // 創建 FormData
-      final formData = FormData.fromMap(addressData);
+      // 創建 FormData，確保欄位名稱正確
+      final formData = FormData.fromMap({
+        'firstname': addressData['firstname'],
+        'lastname': addressData['lastname'],
+        'company': addressData['company'] ?? '',
+        'address_1': addressData['address_1'],
+        'address_2': addressData['address_2'] ?? '',
+        'city': addressData['city'] ?? '',
+        'postcode': addressData['postcode'] ?? '',
+        'country_id': addressData['country_id'],
+        'zone_id': addressData['zone_id'],
+        'default': addressData['default'],
+        'custom_field[1]': addressData['custom_field[1]'],
+        'cellphone': addressData['cellphone'] ?? '',
+        'pickupstore': addressData['pickupstore'] ?? '',
+      });
       
       // 發送請求
       final response = await _dio.post(
