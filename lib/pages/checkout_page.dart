@@ -1414,16 +1414,14 @@ class _CheckoutPageState extends State<CheckoutPage> {
       }
     }
 
-    // 計算各項金額
-    final double subTotal = _calculateSubTotal();
-    final double shippingFee = _calculateShippingFee();
-    final double discount = _totals.any((total) => total['code'] == 'coupon')
-        ? double.tryParse(_totals.firstWhere((total) => total['code'] == 'coupon')['text']?.replaceAll(RegExp(r'[^-\d.]'), '') ?? '0') ?? 0.0
-        : 0.0;
-    final double finalTotal = subTotal + shippingFee + discount; // discount 已經是負數，所以用加的
-
+    // 使用 _calculateFinalTotal 計算的金額
+    final subTotal = _calculateSubTotal();
+    final shippingFee = _calculateShippingFee();
+    final discount = _calculateDiscount();
+    final finalTotal = subTotal + shippingFee - discount;
+    
     // 設置訂單總金額（加上 .0000 格式）
-    orderData['total'] = '${finalTotal.abs().toStringAsFixed(4)}';
+    orderData['total'] = '${finalTotal.toStringAsFixed(4)}';
     
     // 設置運費資訊
     if (shippingFee > 0) {
@@ -1434,7 +1432,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       orderData['shipping_code'] = 'shipping.free';
     }
     
-    // 重新構建訂單摘要
+    // 構建訂單摘要
     int totalIndex = 0;
     
     // 1. 商品合計
@@ -1445,11 +1443,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     totalIndex++;
     
     // 2. 折價券（如果有）
-    if (_totals.any((total) => total['code'] == 'coupon')) {
-      final couponTotal = _totals.firstWhere((total) => total['code'] == 'coupon');
+    if (discount > 0) {
       orderData['totals[$totalIndex][code]'] = 'coupon';
-      orderData['totals[$totalIndex][title]'] = couponTotal['title'] ?? '折價券';
-      orderData['totals[$totalIndex][value]'] = discount.toString();
+      orderData['totals[$totalIndex][title]'] = '折價券';
+      orderData['totals[$totalIndex][value]'] = (-discount).toString(); // 負數表示折扣
       orderData['totals[$totalIndex][sort_order]'] = '${totalIndex + 1}';
       totalIndex++;
     }
