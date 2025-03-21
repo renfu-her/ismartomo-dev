@@ -178,7 +178,7 @@ class _AddressEditPageState extends State<AddressEditPage> {
         'country_id': '206', // 台灣
         'zone_id': _selectedZoneId,
         'default': _isDefault ? '1' : '0',
-        'custom_field[1]': '711', // 根據需求設置
+        'custom_field[1]': _pickupstoreController.text.trim(), // 根據需求設置
         'pickupstore': _pickupstoreController.text.trim(),
       };
 
@@ -291,7 +291,7 @@ class _AddressEditPageState extends State<AddressEditPage> {
                     TextFormField(
                       controller: _pickupstoreController,
                       decoration: const InputDecoration(
-                        labelText: '超商店到店（選填）',
+                        labelText: '超商店到店（選填，例：7-ELEVEN 鑫台北門市）',
                         border: OutlineInputBorder(),
                       ),
                     ),
