@@ -172,9 +172,12 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   }
   
   Widget _buildStatusSection() {
-    final status = _orderDetail['order_status_id'] ?? '';
-    final statusText = _getStatusText(status);
-    final statusColor = _getStatusColor(statusText);
+    // 按時間排序 histories，取最新的狀態
+    final List<Map<String, dynamic>> sortedHistories = List.from(_histories)
+      ..sort((a, b) => (b['date_added'] ?? '').compareTo(a['date_added'] ?? ''));
+    
+    final String status = sortedHistories.isNotEmpty ? sortedHistories[0]['status'] ?? '' : '';
+    final statusColor = _getStatusColor(status);
     
     return Container(
       padding: const EdgeInsets.all(16),
@@ -186,7 +189,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       child: Row(
         children: [
           Icon(
-            _getStatusIcon(statusText),
+            _getStatusIcon(status),
             color: statusColor,
             size: 24,
           ),
@@ -204,7 +207,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  statusText,
+                  status,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -569,25 +572,6 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
         ],
       ),
     );
-  }
-  
-  String _getStatusText(String statusId) {
-    switch (statusId) {
-      case '1':
-        return '待付款(線上)';
-      case '2':
-        return '處理中';
-      case '3':
-        return '已出貨';
-      case '4':
-        return '交易確認完成-推薦獎金（線上線下）';
-      case '5':
-        return '已取消';
-      case '6':
-        return '現金結帳完成(線下)';
-      default:
-        return '未知狀態';
-    }
   }
   
   Color _getStatusColor(String status) {

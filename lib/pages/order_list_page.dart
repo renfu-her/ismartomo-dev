@@ -221,8 +221,12 @@ class _OrderListPageState extends State<OrderListPage> {
       return Colors.green;
     } else if (status.contains('取消')) {
       return Colors.red;
-    } else {
+    } else if (status.contains('處理中')) {
       return Colors.blue;
+    } else if (status.contains('已出貨')) {
+      return Colors.purple;
+    } else {
+      return Colors.grey;
     }
   }
 } 

@@ -3,6 +3,9 @@ import 'package:flutter_html/flutter_html.dart';
 import '../services/api_service.dart';
 import '../services/user_service.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Map<String, dynamic> productDetails;
@@ -322,8 +325,84 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           IconButton(
             icon: const Icon(Icons.share),
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('分享功能待實現')),
+              showModalBottomSheet(
+                context: context,
+                builder: (BuildContext context) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          '分享到',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Line 分享
+                            _buildShareButton(
+                              icon: Icons.chat,
+                              label: 'Line',
+                              color: Colors.green,
+                              onTap: () {
+                                if (_productData['line_shref'] != null) {
+                                  _launchUrl(_productData['line_shref']);
+                                }
+                                Navigator.pop(context);
+                              },
+                            ),
+                            // Facebook 分享
+                            _buildShareButton(
+                              icon: Icons.facebook,
+                              label: 'Facebook',
+                              color: Colors.blue,
+                              onTap: () {
+                                if (_productData['facebook_shref'] != null) {
+                                  _launchUrl(_productData['facebook_shref']);
+                                }
+                                Navigator.pop(context);
+                              },
+                            ),
+                            // Twitter 分享
+                            _buildShareButton(
+                              icon: Icons.messenger_outline,
+                              label: 'Twitter',
+                              color: Colors.lightBlue,
+                              onTap: () {
+                                if (_productData['twitter_shref'] != null) {
+                                  _launchUrl(_productData['twitter_shref']);
+                                }
+                                Navigator.pop(context);
+                              },
+                            ),
+                            // 複製連結
+                            _buildShareButton(
+                              icon: Icons.link,
+                              label: '複製連結',
+                              color: Colors.grey,
+                              onTap: () {
+                                if (_productData['shref'] != null) {
+                                  Clipboard.setData(ClipboardData(
+                                    text: _productData['shref'],
+                                  ));
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('已複製分享連結')),
+                                  );
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                },
               );
             },
           ),
@@ -1064,5 +1143,53 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
       ],
     );
+  }
+
+  // 添加分享按鈕小工具
+  Widget _buildShareButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 添加 URL 啟動方法
+  Future<void> _launchUrl(String url) async {
+    try {
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        throw '無法開啟連結';
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('分享失敗: ${e.toString()}')),
+      );
+    }
   }
 } 
