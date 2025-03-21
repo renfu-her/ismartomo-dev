@@ -186,7 +186,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   }
   
   // 驗證折價券
-  void _validateCoupon(String code) {
+  void _validateCoupon(String code) async {
     if (code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('請輸入折價券代碼')),
@@ -198,60 +198,73 @@ class _CheckoutPageState extends State<CheckoutPage> {
       _isLoadingCoupon = true;
     });
 
-    // 在折價券列表中查找匹配的折價券
-    final now = DateTime.now();
-    final coupon = _coupons.firstWhere(
-      (coupon) {
-        final dateStart = DateTime.parse(coupon['date_start']);
-        final dateEnd = DateTime.parse(coupon['date_end']);
-        return coupon['code'] == code &&
-               coupon['status'] == 'Enabled' &&
-               now.isAfter(dateStart) &&
-               now.isBefore(dateEnd);
-      },
-      orElse: () => <String, dynamic>{},
-    );
+    try {
+      // 獲取折價券列表
+      final response = await _apiService.getCoupons();
+      
+      if (response.containsKey('coupons') && response['coupons'] is List) {
+        final coupons = List<Map<String, dynamic>>.from(response['coupons']);
+        
+        // 在折價券列表中查找匹配的折價券
+        final now = DateTime.now();
+        final coupon = coupons.firstWhere(
+          (coupon) {
+            final dateStart = DateTime.parse(coupon['date_start']);
+            final dateEnd = DateTime.parse(coupon['date_end']);
+            return coupon['code'] == code &&
+                   coupon['status'] == 'Enabled' &&
+                   now.isAfter(dateStart) &&
+                   now.isBefore(dateEnd);
+          },
+          orElse: () => <String, dynamic>{},
+        );
 
-    if (coupon.isEmpty) {
+        if (coupon.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('無效的折價券代碼或已過期')),
+          );
+          setState(() {
+            _isLoadingCoupon = false;
+            _selectedCoupon = null;
+          });
+          return;
+        }
+
+        // 檢查訂單金額是否達到折價券使用門檻
+        double orderTotal = _calculateSubTotal();
+        final couponMinTotal = double.tryParse(coupon['total'] ?? '0') ?? 0.0;
+        
+        if (orderTotal < couponMinTotal) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('訂單金額需滿 NT\$${couponMinTotal.toInt()} 才能使用此折價券')),
+          );
+          setState(() {
+            _isLoadingCoupon = false;
+            _selectedCoupon = null;
+          });
+          return;
+        }
+
+        setState(() {
+          _isLoadingCoupon = false;
+          _selectedCoupon = coupon;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('折價券已套用')),
+        );
+      } else {
+        throw Exception('無法獲取折價券資料');
+      }
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('無效的折價券代碼或已過期')),
+        SnackBar(content: Text('驗證折價券時發生錯誤: ${e.toString()}')),
       );
       setState(() {
         _isLoadingCoupon = false;
         _selectedCoupon = null;
       });
-      return;
     }
-
-    // 檢查訂單金額是否達到折價券使用門檻
-    double orderTotal = 0.0;
-    for (var item in _cartItems) {
-      String totalStr = item['total'] ?? '';
-      totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
-      double total = double.tryParse(totalStr) ?? 0.0;
-      orderTotal += total;
-    }
-
-    final couponMinTotal = double.tryParse(coupon['total'] ?? '0') ?? 0.0;
-    if (orderTotal < couponMinTotal) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('訂單金額需滿 NT\$${couponMinTotal.toInt()} 才能使用此折價券')),
-      );
-      setState(() {
-        _isLoadingCoupon = false;
-        _selectedCoupon = null;
-      });
-      return;
-    }
-
-    setState(() {
-      _isLoadingCoupon = false;
-      _selectedCoupon = coupon;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('折價券已套用')),
-    );
   }
   
   // 計算折扣金額
