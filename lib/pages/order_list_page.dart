@@ -181,36 +181,6 @@ class _OrderListPageState extends State<OrderListPage> {
                   },
                 ),
               ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: 4, // 當前選中的是"我的"
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: '首頁',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.category),
-            label: '分類',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: '購物車',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: '收藏',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: '我的',
-          ),
-        ],
-        onTap: (index) {
-          // 返回首頁，並設置底部導航欄的選中項
-          Navigator.of(context).popUntil((route) => route.isFirst);
-        },
-      ),
     );
   }
   
