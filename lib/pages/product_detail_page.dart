@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Map<String, dynamic> productDetails;
@@ -30,6 +31,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   double _basePrice = 0.0; // 基本價格
   double _finalPrice = 0.0; // 最終價格（含選項）
   bool _isPriceZero = false; // 標記價格是否為零
+  bool _isFavorite = false; // 標記是否為收藏
   
   @override
   void initState() {
@@ -284,6 +286,106 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
   
+  // 分享產品資訊
+  void _shareProduct() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                '分享到',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // 系統分享
+                  _buildShareButton(
+                    icon: Icons.share,
+                    label: '分享',
+                    color: Colors.blue,
+                    onTap: () async {
+                      final String productName = widget.productDetails['name'] ?? '';
+                      final String productPrice = widget.productDetails['price'] ?? '';
+                      final String productDesc = widget.productDetails['description'] ?? '';
+                      final String shareUrl = 'https://ismartdemo.com.tw/product/${widget.productDetails['product_id']}';
+                      
+                      // 構建分享文本
+                      final String shareText = '''
+$productName
+價格: $productPrice
+
+立即購買: $shareUrl
+''';
+                      
+                      await Share.share(shareText);
+                      Navigator.pop(context);
+                    },
+                  ),
+                  // 複製連結
+                  _buildShareButton(
+                    icon: Icons.link,
+                    label: '複製連結',
+                    color: Colors.grey,
+                    onTap: () async {
+                      final String shareUrl = 'https://ismartdemo.com.tw/product/${widget.productDetails['product_id']}';
+                      await Clipboard.setData(ClipboardData(text: shareUrl));
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已複製分享連結')),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  
+  // 添加分享按鈕小工具
+  Widget _buildShareButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
   @override
   Widget build(BuildContext context) {
     // 根據 quantity 判斷產品是否缺貨
@@ -300,14 +402,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           if (!_isPriceZero)
             Consumer<UserService>(
               builder: (context, userService, child) {
-                bool isFavorite = userService.isFavorite(_productData['product_id']);
+                _isFavorite = userService.isFavorite(_productData['product_id']);
                 return IconButton(
                   icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                    _isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: Colors.red,
                   ),
                   onPressed: () {
-                    if (isFavorite) {
+                    if (_isFavorite) {
                       userService.removeFavorite(_productData['product_id']);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('已從收藏中移除')),
@@ -322,89 +424,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 );
               },
             ),
+          // 分享按鈕
           IconButton(
             icon: const Icon(Icons.share),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (BuildContext context) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          '分享到',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            // Line 分享
-                            _buildShareButton(
-                              icon: Icons.chat,
-                              label: 'Line',
-                              color: Colors.green,
-                              onTap: () {
-                                if (_productData['line_shref'] != null) {
-                                  _launchUrl(_productData['line_shref']);
-                                }
-                                Navigator.pop(context);
-                              },
-                            ),
-                            // Facebook 分享
-                            _buildShareButton(
-                              icon: Icons.facebook,
-                              label: 'Facebook',
-                              color: Colors.blue,
-                              onTap: () {
-                                if (_productData['facebook_shref'] != null) {
-                                  _launchUrl(_productData['facebook_shref']);
-                                }
-                                Navigator.pop(context);
-                              },
-                            ),
-                            // Twitter 分享
-                            _buildShareButton(
-                              icon: Icons.messenger_outline,
-                              label: 'Twitter',
-                              color: Colors.lightBlue,
-                              onTap: () {
-                                if (_productData['twitter_shref'] != null) {
-                                  _launchUrl(_productData['twitter_shref']);
-                                }
-                                Navigator.pop(context);
-                              },
-                            ),
-                            // 複製連結
-                            _buildShareButton(
-                              icon: Icons.link,
-                              label: '複製連結',
-                              color: Colors.grey,
-                              onTap: () {
-                                if (_productData['shref'] != null) {
-                                  Clipboard.setData(ClipboardData(
-                                    text: _productData['shref'],
-                                  ));
-                                  Navigator.pop(context);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('已複製分享連結')),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
+            onPressed: _shareProduct,
           ),
         ],
       ),
@@ -1143,53 +1166,5 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
       ],
     );
-  }
-
-  // 添加分享按鈕小工具
-  Widget _buildShareButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[800],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 添加 URL 啟動方法
-  Future<void> _launchUrl(String url) async {
-    try {
-      if (await canLaunch(url)) {
-        await launch(url);
-      } else {
-        throw '無法開啟連結';
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('分享失敗: ${e.toString()}')),
-      );
-    }
   }
 } 
