@@ -313,10 +313,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     label: '分享',
                     color: Colors.blue,
                     onTap: () async {
-                      final String productName = widget.productDetails['name'] ?? '';
-                      final String productPrice = widget.productDetails['price'] ?? '';
-                      final String productDesc = widget.productDetails['description'] ?? '';
-                      final String shareUrl = 'https://ismartdemo.com.tw/product/${widget.productDetails['product_id']}';
+                      final String productName = _productData['name'] ?? '';
+                      final String productPrice = _productData['price'] ?? '';
+                      final String shareUrl = _productData['shref'] ?? '';
                       
                       // 構建分享文本
                       final String shareText = '''
@@ -336,7 +335,7 @@ $productName
                     label: '複製連結',
                     color: Colors.grey,
                     onTap: () async {
-                      final String shareUrl = 'https://ismartdemo.com.tw/product/${widget.productDetails['product_id']}';
+                      final String shareUrl = _productData['shref'] ?? '';
                       await Clipboard.setData(ClipboardData(text: shareUrl));
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
