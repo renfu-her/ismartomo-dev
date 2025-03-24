@@ -588,6 +588,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   underline: Container(), // 移除下劃線
                   icon: const Icon(Icons.arrow_drop_down),
                   hint: const Text('請選擇收件地址'),
+                  menuMaxHeight: 400, // 添加這行，設置下拉選單的最大高度
                   items: _addressList.map((address) {
                     final String addressId = address['address_id']?.toString() ?? '';
                     final String fullName = '${address['lastname']} ${address['firstname']}';
