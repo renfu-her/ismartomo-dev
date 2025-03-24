@@ -291,7 +291,7 @@ class _AddressEditPageState extends State<AddressEditPage> {
                     TextFormField(
                       controller: _pickupstoreController,
                       decoration: const InputDecoration(
-                        labelText: '超商店到店（選填，例：7-ELEVEN 鑫台北門市）',
+                        labelText: '超商店到店（選填，例:7-ELEVEN 鑫台北門市）',
                         border: OutlineInputBorder(),
                       ),
                     ),
