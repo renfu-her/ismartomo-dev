@@ -291,7 +291,61 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: _pages[_currentIndex],
+      body: Stack(
+        children: [
+          _pages[_currentIndex],
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              heroTag: 'globalMenu',
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  builder: (context) => Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          leading: Image.asset(
+                            'assets/images/line.png',
+                            width: 24,
+                            height: 24,
+                          ),
+                          title: const Text('LINE'),
+                          onTap: () {
+                            // TODO: 處理 LINE 點擊事件
+                          },
+                        ),
+                        ListTile(
+                          leading: Image.asset(
+                            'assets/images/messenger.png',
+                            width: 24,
+                            height: 24,
+                          ),
+                          title: const Text('Facebook Messenger'),
+                          onTap: () {
+                            // TODO: 處理 Messenger 點擊事件
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.minimize),
+                          title: const Text('縮小'),
+                          onTap: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              child: const FaIcon(FontAwesomeIcons.solidComments),
+            ),
+          ),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
