@@ -352,26 +352,37 @@ class _CheckoutPageState extends State<CheckoutPage> {
             const SizedBox(height: 32),
             
             // 提交訂單按鈕
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  // 提交訂單功能
-                  _submitOrder();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+            SafeArea(
+              bottom: true,
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 16.0,
+                    right: 16.0,
+                    top: 8.0,
+                    bottom: 12.0,
                   ),
-                ),
-                child: const Text(
-                  '提交訂單',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // 提交訂單功能
+                      _submitOrder();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                    child: const Text(
+                      '提交訂單',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ),

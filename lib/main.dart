@@ -299,6 +299,8 @@ class _HomePageState extends State<HomePage> {
             bottom: 16,
             child: FloatingActionButton(
               heroTag: 'globalMenu',
+              backgroundColor: Colors.transparent,
+              elevation: 0,
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -341,7 +343,23 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               },
-              child: const FaIcon(FontAwesomeIcons.solidComments),
+              child: Container(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      spreadRadius: 2,
+                      blurRadius: 5,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  'assets/images/line.png',
+                  width: 46,
+                  height: 46,
+                ),
+              ),
             ),
           ),
         ],

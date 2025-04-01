@@ -730,47 +730,52 @@ $productName
 
                   // 底部固定的購買區域 - 價格為零時隱藏
                   if (!_isPriceZero)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 12.0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, -1),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          // 加入購物車按鈕
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: isOutOfStock ? null : _addToCart,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
+                    SafeArea(
+                      bottom: true,
+                      child: Container(
+                        padding: const EdgeInsets.only(
+                          left: 16.0,
+                          right: 16.0,
+                          top: 12.0,
+                          bottom: 12.0,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, -1),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // 加入購物車按鈕
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: isOutOfStock ? null : _addToCart,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  minimumSize: const Size(double.infinity, 50),
                                 ),
-                                minimumSize: const Size(double.infinity, 50),
-                              ),
-                              child: Text(
-                                isOutOfStock ? '產品已售完' : '加入購物車',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                child: Text(
+                                  isOutOfStock ? '產品已售完' : '加入購物車',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                 ],

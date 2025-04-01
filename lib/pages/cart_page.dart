@@ -359,35 +359,43 @@ class _CartPageState extends State<CartPage> {
         _buildCartTotals(),
         
         // 結帳按鈕
-        Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () {
-                // 導航到結帳頁面
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const CheckoutPage(),
+        SafeArea(
+          bottom: true,
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 16.0,
+              right: 16.0,
+              top: 8.0,
+              bottom: 12.0,
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  // 導航到結帳頁面
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const CheckoutPage(),
+                    ),
+                  ).then((_) {
+                    // 從結帳頁面返回後刷新購物車數據
+                    _fetchCartData();
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                ).then((_) {
-                  // 從結帳頁面返回後刷新購物車數據
-                  _fetchCartData();
-                });
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
                 ),
-              ),
-              child: const Text(
-                '前往結帳',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                child: const Text(
+                  '前往結帳',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
