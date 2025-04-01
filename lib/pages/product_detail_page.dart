@@ -753,26 +753,17 @@ $productName
                             child: ElevatedButton(
                               onPressed: isOutOfStock ? null : _addToCart,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    isOutOfStock ? Colors.grey : Colors.white,
-                                foregroundColor:
-                                    isOutOfStock ? Colors.white : Colors.black,
-                                padding: EdgeInsets.symmetric(vertical: 12),
+                                backgroundColor: Colors.black,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                  side: BorderSide(
-                                    color:
-                                        isOutOfStock
-                                            ? Colors.grey
-                                            : Colors.black,
-                                    width: 1,
-                                  ),
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                                minimumSize: Size(double.infinity, 50),
+                                minimumSize: const Size(double.infinity, 50),
                               ),
                               child: Text(
                                 isOutOfStock ? '產品已售完' : '加入購物車',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                 ),
