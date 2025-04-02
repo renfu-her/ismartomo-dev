@@ -20,6 +20,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/search_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // 全局 SharedPreferences 實例
 late SharedPreferences prefs;
@@ -326,8 +327,17 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           title: const Text('LINE'),
-                          onTap: () {
-                            // TODO: 處理 LINE 點擊事件
+                          onTap: () async {
+                            final Uri url = Uri.parse('https://lin.ee/fWAyD9T');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('無法開啟 LINE')),
+                                );
+                              }
+                            }
                           },
                         ),
                         ListTile(
@@ -347,8 +357,17 @@ class _HomePageState extends State<HomePage> {
                             ),
                           ),
                           title: const Text('Facebook Messenger'),
-                          onTap: () {
-                            // TODO: 處理 Messenger 點擊事件
+                          onTap: () async {
+                            final Uri url = Uri.parse('https://m.me/107852265523612');
+                            if (await canLaunchUrl(url)) {
+                              await launchUrl(url, mode: LaunchMode.externalApplication);
+                            } else {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('無法開啟 Messenger')),
+                                );
+                              }
+                            }
                           },
                         ),
                         ListTile(
