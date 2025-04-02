@@ -310,10 +310,20 @@ class _HomePageState extends State<HomePage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         ListTile(
-                          leading: Image.asset(
-                            'assets/images/line.png',
+                          leading: Container(
                             width: 24,
                             height: 24,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Center(
+                              child: FaIcon(
+                                FontAwesomeIcons.line,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
                           ),
                           title: const Text('LINE'),
                           onTap: () {
@@ -321,10 +331,20 @@ class _HomePageState extends State<HomePage> {
                           },
                         ),
                         ListTile(
-                          leading: Image.asset(
-                            'assets/images/messenger.png',
+                          leading: Container(
                             width: 24,
                             height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Center(
+                              child: FaIcon(
+                                FontAwesomeIcons.facebookMessenger,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
                           ),
                           title: const Text('Facebook Messenger'),
                           onTap: () {
@@ -332,8 +352,8 @@ class _HomePageState extends State<HomePage> {
                           },
                         ),
                         ListTile(
-                          leading: const Icon(Icons.minimize),
-                          title: const Text('縮小'),
+                          leading: const FaIcon(FontAwesomeIcons.xmark),
+                          title: const Text('關閉'),
                           onTap: () {
                             Navigator.pop(context);
                           },
@@ -344,7 +364,11 @@ class _HomePageState extends State<HomePage> {
                 );
               },
               child: Container(
+                width: 46,
+                height: 46,
                 decoration: BoxDecoration(
+                  color: const Color(0xFF4CAF50),
+                  borderRadius: BorderRadius.circular(4),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.3),
@@ -354,10 +378,12 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ],
                 ),
-                child: Image.asset(
-                  'assets/images/line.png',
-                  width: 46,
-                  height: 46,
+                child: const Center(
+                  child: FaIcon(
+                    FontAwesomeIcons.solidComments,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
               ),
             ),
