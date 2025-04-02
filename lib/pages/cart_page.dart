@@ -310,27 +310,35 @@ class _CartPageState extends State<CartPage> {
           ),
           
           // 底部按鈕區域
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 0, 20.0, 20.0),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
-                onPressed: () {
-                  // 切換到首頁
-                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                },
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.grey[400]!),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
+          SafeArea(
+            bottom: true,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                left: 16.0,
+                right: 16.0,
+                top: 8.0,
+                bottom: 12.0,
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () {
+                    // 切換到首頁
+                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey[400]!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  '回首頁',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.black87,
+                  child: const Text(
+                    '回首頁',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
               ),
@@ -389,7 +397,6 @@ class _CartPageState extends State<CartPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  side: BorderSide(color: Colors.black),
                 ),
                 child: const Text(
                   '前往結帳',

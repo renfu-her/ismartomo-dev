@@ -355,7 +355,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
             SafeArea(
               bottom: true,
               child: Container(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  top: 8.0,
+                  bottom: 12.0,
+                ),
                 color: Colors.white,
                 child: SizedBox(
                   width: double.infinity,
@@ -371,8 +376,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
                       ),
-                      side: BorderSide(color: Colors.black),
-                      minimumSize: const Size(double.infinity, 50),
                     ),
                     child: const Text(
                       '提交訂單',
