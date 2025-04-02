@@ -316,58 +316,60 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                '分享到',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  // 系統分享
-                  _buildShareButton(
-                    icon: Icons.share,
-                    label: '分享',
-                    color: Colors.blue,
-                    onTap: () async {
-                      final String productName = _productData['name'] ?? '';
-                      final String productPrice = _productData['price'] ?? '';
-                      final String shareUrl = _productData['shref'] ?? '';
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 12.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '分享到',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    // 系統分享
+                    _buildShareButton(
+                      icon: Icons.share,
+                      label: '分享',
+                      color: Colors.blue,
+                      onTap: () async {
+                        final String productName = _productData['name'] ?? '';
+                        final String productPrice = _productData['price'] ?? '';
+                        final String shareUrl = _productData['shref'] ?? '';
 
-                      // 構建分享文本
-                      final String shareText = '''
+                        // 構建分享文本
+                        final String shareText = '''
 $productName
 價格: $productPrice
 
 立即購買: $shareUrl
 ''';
 
-                      await Share.share(shareText);
-                      Navigator.pop(context);
-                    },
-                  ),
-                  // 複製連結
-                  _buildShareButton(
-                    icon: Icons.link,
-                    label: '複製連結',
-                    color: Colors.grey,
-                    onTap: () async {
-                      final String shareUrl = _productData['shref'] ?? '';
-                      await Clipboard.setData(ClipboardData(text: shareUrl));
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('已複製分享連結')));
-                    },
-                  ),
-                ],
-              ),
-            ],
+                        await Share.share(shareText);
+                        Navigator.pop(context);
+                      },
+                    ),
+                    // 複製連結
+                    _buildShareButton(
+                      icon: Icons.link,
+                      label: '複製連結',
+                      color: Colors.grey,
+                      onTap: () async {
+                        final String shareUrl = _productData['shref'] ?? '';
+                        await Clipboard.setData(ClipboardData(text: shareUrl));
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(const SnackBar(content: Text('已複製分享連結')));
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
       },
