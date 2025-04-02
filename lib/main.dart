@@ -305,79 +305,81 @@ class _HomePageState extends State<HomePage> {
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
-                  builder: (context) => Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Center(
-                              child: FaIcon(
-                                FontAwesomeIcons.line,
-                                color: Colors.white,
-                                size: 16,
+                  builder: (context) => SafeArea(
+                    child: Container(
+                      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 8.0, bottom: 12.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            leading: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Center(
+                                child: FaIcon(
+                                  FontAwesomeIcons.line,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
-                          ),
-                          title: const Text('LINE'),
-                          onTap: () async {
-                            final Uri url = Uri.parse('https://lin.ee/fWAyD9T');
-                            if (await canLaunchUrl(url)) {
-                              await launchUrl(url, mode: LaunchMode.externalApplication);
-                            } else {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('無法開啟 LINE')),
-                                );
+                            title: const Text('LINE'),
+                            onTap: () async {
+                              final Uri url = Uri.parse('https://lin.ee/fWAyD9T');
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('無法開啟 LINE')),
+                                  );
+                                }
                               }
-                            }
-                          },
-                        ),
-                        ListTile(
-                          leading: Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Center(
-                              child: FaIcon(
-                                FontAwesomeIcons.facebookMessenger,
-                                color: Colors.white,
-                                size: 16,
+                            },
+                          ),
+                          ListTile(
+                            leading: Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Center(
+                                child: FaIcon(
+                                  FontAwesomeIcons.facebookMessenger,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
                               ),
                             ),
-                          ),
-                          title: const Text('Facebook Messenger'),
-                          onTap: () async {
-                            final Uri url = Uri.parse('https://m.me/107852265523612');
-                            if (await canLaunchUrl(url)) {
-                              await launchUrl(url, mode: LaunchMode.externalApplication);
-                            } else {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('無法開啟 Messenger')),
-                                );
+                            title: const Text('Facebook Messenger'),
+                            onTap: () async {
+                              final Uri url = Uri.parse('https://m.me/107852265523612');
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              } else {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('無法開啟 Messenger')),
+                                  );
+                                }
                               }
-                            }
-                          },
-                        ),
-                        ListTile(
-                          leading: const FaIcon(FontAwesomeIcons.xmark),
-                          title: const Text('關閉'),
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
+                            },
+                          ),
+                          ListTile(
+                            leading: const FaIcon(FontAwesomeIcons.xmark),
+                            title: const Text('關閉'),
+                            onTap: () {
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 );

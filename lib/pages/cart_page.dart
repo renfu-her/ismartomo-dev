@@ -310,36 +310,55 @@ class _CartPageState extends State<CartPage> {
           ),
           
           // 底部按鈕區域
-          SafeArea(
-            bottom: true,
-            child: Padding(
-              padding: const EdgeInsets.only(
-                left: 16.0,
-                right: 16.0,
-                top: 8.0,
-                bottom: 12.0,
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: OutlinedButton(
-                  onPressed: () {
-                    // 切換到首頁
-                    Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey[400]!),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  spreadRadius: 1,
+                  blurRadius: 3,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              bottom: true,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  left: 16.0,
+                  right: 16.0,
+                  top: 8.0,
+                  bottom: 12.0,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // 切換到首頁
+                          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          side: const BorderSide(color: Colors.black),
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                        child: const Text(
+                          '回首頁',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                  child: const Text(
-                    '回首頁',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -367,44 +386,52 @@ class _CartPageState extends State<CartPage> {
         _buildCartTotals(),
         
         // 結帳按鈕
-        SafeArea(
-          bottom: true,
-          child: Padding(
-            padding: const EdgeInsets.only(
-              left: 16.0,
-              right: 16.0,
-              top: 8.0,
-              bottom: 12.0,
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  // 導航到結帳頁面
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const CheckoutPage(),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 3,
+                offset: const Offset(0, -1),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            bottom: true,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                left: 16.0,
+                right: 16.0,
+                top: 8.0,
+                bottom: 12.0,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: _cartItems.isEmpty ? null : _proceedToCheckout,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        side: const BorderSide(color: Colors.black),
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: Text(
+                        _cartItems.isEmpty ? '購物車是空的' : '前往結帳',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                  ).then((_) {
-                    // 從結帳頁面返回後刷新購物車數據
-                    _fetchCartData();
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
                   ),
-                ),
-                child: const Text(
-                  '前往結帳',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                ],
               ),
             ),
           ),
@@ -1051,5 +1078,16 @@ class _CartPageState extends State<CartPage> {
     });
     
     return parsedOptions;
+  }
+
+  void _proceedToCheckout() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CheckoutPage(),
+      ),
+    ).then((_) {
+      // 從結帳頁面返回後刷新購物車數據
+      _fetchCartData();
+    });
   }
 } 
