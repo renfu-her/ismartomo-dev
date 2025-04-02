@@ -212,6 +212,23 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   void _addToCart() async {
     try {
+      // 檢查登入狀態
+      final userService = Provider.of<UserService>(context, listen: false);
+      if (!userService.isLoggedIn) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('請先登入以使用購物車功能'),
+            action: SnackBarAction(
+              label: '登入',
+              onPressed: () {
+                Navigator.of(context).pushNamed('/login');
+              },
+            ),
+          ),
+        );
+        return;
+      }
+
       // 檢查是否有必選選項未選擇
       bool hasRequiredOptions = false;
       bool allRequiredOptionsSelected = true;
@@ -401,7 +418,7 @@ $productName
           if (!_isPriceZero)
             Consumer<UserService>(
               builder: (context, userService, child) {
-                _isFavorite = userService.isFavorite(
+                _isFavorite = userService.isLoggedIn && userService.isFavorite(
                   _productData['product_id'],
                 );
                 return IconButton(
@@ -410,16 +427,30 @@ $productName
                     color: Colors.red,
                   ),
                   onPressed: () {
+                    if (!userService.isLoggedIn) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('請先登入以使用收藏功能'),
+                          action: SnackBarAction(
+                            label: '登入',
+                            onPressed: () {
+                              Navigator.of(context).pushNamed('/login');
+                            },
+                          ),
+                        ),
+                      );
+                      return;
+                    }
                     if (_isFavorite) {
                       userService.removeFavorite(_productData['product_id']);
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('已從收藏中移除')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已從收藏中移除')),
+                      );
                     } else {
                       userService.addFavorite(_productData['product_id']);
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(const SnackBar(content: Text('已加入收藏')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('已加入收藏')),
+                      );
                     }
                   },
                 );

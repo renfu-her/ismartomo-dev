@@ -1046,7 +1046,7 @@ class ProductCard extends StatelessWidget {
                           child: Consumer<UserService>(
                             builder: (context, userService, child) {
                               final productId = product['product_id'].toString();
-                              final isFavorite = userService.isFavorite(productId);
+                              final isFavorite = userService.isLoggedIn && userService.isFavorite(productId);
                               
                               return IconButton(
                                 padding: EdgeInsets.zero,
@@ -1057,20 +1057,7 @@ class ProductCard extends StatelessWidget {
                                   color: Colors.red,
                                 ),
                                 onPressed: () {
-                                  if (userService.isLoggedIn) {
-                                    if (isFavorite) {
-                                      userService.removeFavorite(productId);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('已從收藏中移除')),
-                                      );
-                                    } else {
-                                      userService.addFavorite(productId);
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('已加入收藏')),
-                                      );
-                                    }
-                                  } else {
-                                    // 提示用戶登入
+                                  if (!userService.isLoggedIn) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: const Text('請先登入以使用收藏功能'),
@@ -1081,6 +1068,18 @@ class ProductCard extends StatelessWidget {
                                           },
                                         ),
                                       ),
+                                    );
+                                    return;
+                                  }
+                                  if (isFavorite) {
+                                    userService.removeFavorite(productId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('已從收藏中移除')),
+                                    );
+                                  } else {
+                                    userService.addFavorite(productId);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('已加入收藏')),
                                     );
                                   }
                                 },

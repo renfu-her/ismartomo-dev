@@ -401,7 +401,7 @@ class _ProductListPageState extends State<ProductListPage> {
                           child: Consumer<UserService>(
                             builder: (context, userService, child) {
                               final productId = product['product_id'].toString();
-                              final isFavorite = userService.isFavorite(productId);
+                              final isFavorite = userService.isLoggedIn && userService.isFavorite(productId);
                               
                               return IconButton(
                                 padding: EdgeInsets.zero,
