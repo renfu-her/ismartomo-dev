@@ -384,11 +384,12 @@ class _CartPageState extends State<CartPage> {
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
                   ),
+                  side: BorderSide(color: Colors.black),
                 ),
                 child: const Text(
                   '前往結帳',

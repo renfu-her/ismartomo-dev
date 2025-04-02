@@ -757,12 +757,13 @@ $productName
                               child: ElevatedButton(
                                 onPressed: isOutOfStock ? null : _addToCart,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black,
-                                  foregroundColor: Colors.white,
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: Colors.black,
                                   padding: const EdgeInsets.symmetric(vertical: 12),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
                                   ),
+                                  side: BorderSide(color: Colors.black),
                                   minimumSize: const Size(double.infinity, 50),
                                 ),
                                 child: Text(
