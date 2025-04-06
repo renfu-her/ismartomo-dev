@@ -21,6 +21,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/search_page.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 // 全局 SharedPreferences 實例
 late SharedPreferences prefs;
@@ -104,6 +105,17 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'API 數據展示',
       debugShowCheckedModeBanner: false,
+      // 添加本地化支援
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', 'TW'), // 繁體中文
+        Locale('en', 'US'), // 英文
+      ],
+      locale: const Locale('zh', 'TW'), // 設置默認語言為繁體中文
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         scaffoldBackgroundColor: Colors.white,

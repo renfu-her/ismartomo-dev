@@ -1454,6 +1454,19 @@ $productName
                   : DateTime.now(),
               firstDate: DateTime.now(),
               lastDate: DateTime.now().add(const Duration(days: 365)),
+              locale: const Locale('zh', 'TW'), // 設置為繁體中文
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    dialogTheme: DialogTheme(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
             );
 
             if (date != null) {
@@ -1463,6 +1476,22 @@ $productName
                 initialTime: currentValue.isNotEmpty
                     ? TimeOfDay.fromDateTime(DateTime.parse(currentValue))
                     : TimeOfDay.now(),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      timePickerTheme: TimePickerThemeData(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                    child: Localizations.override(
+                      context: context,
+                      locale: const Locale('zh', 'TW'),
+                      child: child!,
+                    ),
+                  );
+                },
               );
 
               if (time != null) {
