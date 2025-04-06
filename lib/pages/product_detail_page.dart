@@ -869,8 +869,28 @@ $productName
                 String optionText = value['name']?.toString().trim().isNotEmpty == true
                     ? value['name']
                     : value['disname'] ?? '';
+                String imageUrl = value['image'] ?? '';
+                // 處理圖片路徑
+                if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                  imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
+                }
 
                 return ChoiceChip(
+                  avatar: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.image_not_supported,
+                              size: 24,
+                              color: Colors.grey,
+                            );
+                          },
+                        )
+                      : null,
                   label: Text(optionText),
                   selected:
                       _selectedOptions[option['product_option_id']] ==
@@ -888,7 +908,7 @@ $productName
               }).toList(),
         ),
 
-        // 顯示選中的顏色名稱
+        // 顯示選中的顏色名稱和圖片
         if (_selectedOptions.containsKey(option['product_option_id']))
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -907,13 +927,39 @@ $productName
                   String colorName = selectedValue['name']?.toString().trim().isNotEmpty == true
                       ? selectedValue['name']
                       : selectedValue['disname'] ?? '';
+                  String imageUrl = selectedValue['image'] ?? '';
+                  // 處理圖片路徑
+                  if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                    imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
+                  }
 
-                  return Text(
-                    '已選: $colorName',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  return Row(
+                    children: [
+                      if (imageUrl.isNotEmpty)
+                        Container(
+                          width: 24,
+                          height: 24,
+                          margin: const EdgeInsets.only(right: 8),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.image_not_supported,
+                                size: 24,
+                                color: Colors.grey,
+                              );
+                            },
+                          ),
+                        ),
+                      Text(
+                        '已選: $colorName',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   );
                 }
 
@@ -940,8 +986,28 @@ $productName
                 String optionText = value['name']?.toString().trim().isNotEmpty == true
                     ? value['name']
                     : value['disname'] ?? '';
+                String imageUrl = value['image'] ?? '';
+                // 處理圖片路徑
+                if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                  imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
+                }
 
                 return ChoiceChip(
+                  avatar: imageUrl.isNotEmpty
+                      ? Image.network(
+                          imageUrl,
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.image_not_supported,
+                              size: 24,
+                              color: Colors.grey,
+                            );
+                          },
+                        )
+                      : null,
                   label: Text(optionText),
                   selected:
                       _selectedOptions[option['product_option_id']] ==
@@ -959,7 +1025,7 @@ $productName
               }).toList(),
         ),
 
-        // 顯示選中的尺寸
+        // 顯示選中的尺寸和圖片
         if (_selectedOptions.containsKey(option['product_option_id']))
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -978,13 +1044,39 @@ $productName
                   String sizeName = selectedValue['name']?.toString().trim().isNotEmpty == true
                       ? selectedValue['name']
                       : selectedValue['disname'] ?? '';
+                  String imageUrl = selectedValue['image'] ?? '';
+                  // 處理圖片路徑
+                  if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                    imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
+                  }
 
-                  return Text(
-                    '已選: $sizeName',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  return Row(
+                    children: [
+                      if (imageUrl.isNotEmpty)
+                        Container(
+                          width: 24,
+                          height: 24,
+                          margin: const EdgeInsets.only(right: 8),
+                          child: Image.network(
+                            imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.image_not_supported,
+                                size: 24,
+                                color: Colors.grey,
+                              );
+                            },
+                          ),
+                        ),
+                      Text(
+                        '已選: $sizeName',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   );
                 }
 
@@ -1243,6 +1335,10 @@ $productName
                   ? value['name']
                   : value['disname'] ?? '';
               String imageUrl = value['image'] ?? '';
+              // 處理圖片路徑
+              if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
+                imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
+              }
 
               return DropdownMenuItem<String>(
                 value: value['product_option_value_id'],
@@ -1255,9 +1351,7 @@ $productName
                         height: 24,
                         margin: const EdgeInsets.only(right: 8),
                         child: Image.network(
-                          imageUrl.startsWith('http')
-                              ? imageUrl
-                              : 'https://ismartdemo.com.tw/image/$imageUrl',
+                          imageUrl,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
