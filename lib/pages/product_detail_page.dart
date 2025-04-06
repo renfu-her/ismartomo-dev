@@ -844,7 +844,9 @@ $productName
                   ? _buildColorOptions(option)
                   : _buildSizeOptions(option)
             else if (option['type'] == 'select')
-              _buildSelectOptions(option),
+              _buildSelectOptions(option)
+            else if (option['type'] == 'datetime')
+              _buildDateTimeOptions(option),
             const SizedBox(height: 16),
           ],
         ),
@@ -1412,6 +1414,98 @@ $productName
                   style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                 ),
               ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 構建日期時間選項
+  Widget _buildDateTimeOptions(Map<String, dynamic> option) {
+    // 獲取當前選中的日期時間值
+    String currentValue = _selectedOptions[option['product_option_id']] ?? '';
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 日期時間選擇按鈕
+        InkWell(
+          onTap: () async {
+            // 選擇日期
+            final DateTime? date = await showDatePicker(
+              context: context,
+              initialDate: currentValue.isNotEmpty 
+                  ? DateTime.parse(currentValue.split(' ')[0])
+                  : DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime.now().add(const Duration(days: 365)),
+            );
+
+            if (date != null) {
+              // 選擇時間
+              final TimeOfDay? time = await showTimePicker(
+                context: context,
+                initialTime: currentValue.isNotEmpty
+                    ? TimeOfDay.fromDateTime(DateTime.parse(currentValue))
+                    : TimeOfDay.now(),
+              );
+
+              if (time != null) {
+                // 組合日期和時間
+                final DateTime selectedDateTime = DateTime(
+                  date.year,
+                  date.month,
+                  date.day,
+                  time.hour,
+                  time.minute,
+                );
+
+                setState(() {
+                  _selectedOptions[option['product_option_id']] = 
+                      selectedDateTime.toString().substring(0, 16);
+                  _calculateFinalPrice();
+                });
+              }
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    currentValue.isNotEmpty 
+                        ? currentValue 
+                        : '請選擇日期和時間',
+                    style: TextStyle(
+                      color: currentValue.isNotEmpty 
+                          ? Colors.black 
+                          : Colors.grey,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, size: 16),
+              ],
+            ),
+          ),
+        ),
+        // 顯示已選擇的日期時間
+        if (currentValue.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              '已選: $currentValue',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
       ],
