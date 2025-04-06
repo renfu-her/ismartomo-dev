@@ -232,26 +232,41 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       // 檢查是否有必選選項未選擇
       bool hasRequiredOptions = false;
       bool allRequiredOptionsSelected = true;
+      List<String> missingOptions = [];
 
       if (_productData.containsKey('options') &&
           _productData['options'] is List) {
         for (var option in _productData['options']) {
-          if (option['required'] == '1') {
+          // 檢查是否為必填選項類型
+          if (option['type'] == 'select' || 
+              option['type'] == 'radio' || 
+              option['type'] == 'datetime') {
             hasRequiredOptions = true;
-            if (!_selectedOptions.containsKey(option['name']) ||
-                _selectedOptions[option['name']] == null ||
-                _selectedOptions[option['name']]!.isEmpty) {
+            
+            // 檢查選項是否已選擇
+            if (!_selectedOptions.containsKey(option['product_option_id']) ||
+                _selectedOptions[option['product_option_id']] == null ||
+                _selectedOptions[option['product_option_id']]!.isEmpty) {
               allRequiredOptionsSelected = false;
-              break;
+              // 獲取選項名稱
+              String optionName = option['name']?.toString().trim().isNotEmpty == true
+                  ? option['name']
+                  : option['disname'] ?? '';
+              missingOptions.add(optionName);
             }
           }
         }
       }
 
       if (hasRequiredOptions && !allRequiredOptionsSelected) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('請選擇所有必選選項')));
+        // 顯示缺少的選項
+        String missingOptionsText = missingOptions.join('、');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('請選擇以下必填選項：$missingOptionsText'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
         return;
       }
 
@@ -260,9 +275,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       if (_productData.containsKey('options') &&
           _productData['options'] is List) {
         for (var option in _productData['options']) {
-          if (_selectedOptions.containsKey(option['name'])) {
+          if (_selectedOptions.containsKey(option['product_option_id'])) {
             options[option['product_option_id']] =
-                _selectedOptions[option['name']]!;
+                _selectedOptions[option['product_option_id']]!;
           }
         }
       }
