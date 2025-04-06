@@ -29,6 +29,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   double _finalPrice = 0.0; // 最終價格（含選項）
   bool _isPriceZero = false; // 標記價格是否為零
   bool _isFavorite = false; // 標記是否為收藏
+  String _currentImage = ''; // 添加當前顯示圖片的狀態
 
   @override
   void initState() {
@@ -51,6 +52,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           _isLoading = false;
           _productData = widget.productDetails;
           _initializePrice();
+          // 初始化當前圖片
+          _currentImage = _productData['thumb'] ?? '';
         });
 
         // 如果需要更詳細的產品信息，可以發送 API 請求
@@ -66,7 +69,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             setState(() {
               _productData = response['product'][0];
               _initializePrice();
-
+              // 更新當前圖片
+              _currentImage = _productData['thumb'] ?? '';
               // 初始化選項
               _initializeOptions();
             });
@@ -508,16 +512,16 @@ $productName
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 產品圖片
-                          if (_productData['thumb'] != null)
+                          // 產品圖片 - 使用 _currentImage
+                          if (_currentImage.isNotEmpty)
                             Container(
                               width: double.infinity,
                               height: 250,
                               color: Colors.white,
                               child: Image.network(
-                                _productData['thumb'].startsWith('http')
-                                    ? _productData['thumb']
-                                    : 'https://ismartdemo.com.tw/image/${_productData['thumb']}',
+                                _currentImage.startsWith('http')
+                                    ? _currentImage
+                                    : 'https://ismartdemo.com.tw/image/$_currentImage',
                                 fit: BoxFit.contain,
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Center(
@@ -882,47 +886,47 @@ $productName
           runSpacing: 8,
           children:
               (option['product_option_value'] as List).map<Widget>((value) {
-                // 構建選項顯示文本，優先使用 name
-                String optionText = value['name']?.toString().trim().isNotEmpty == true
-                    ? value['name']
-                    : value['disname'] ?? '';
-                String imageUrl = value['image'] ?? '';
-                // 處理圖片路徑
-                if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-                  imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
-                }
-
-                return ChoiceChip(
-                  avatar: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
-                          width: 24,
-                          height: 24,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.image_not_supported,
-                              size: 24,
-                              color: Colors.grey,
-                            );
-                          },
-                        )
-                      : null,
-                  label: Text(optionText),
-                  selected:
-                      _selectedOptions[option['product_option_id']] ==
-                      value['product_option_value_id'],
-                  onSelected: (isSelected) {
-                    if (isSelected) {
-                      setState(() {
-                        _selectedOptions[option['product_option_id']] =
-                            value['product_option_value_id'];
-                        _calculateFinalPrice();
-                      });
+            String optionText = value['name']?.toString().trim().isNotEmpty == true
+                ? value['name']
+                : value['disname'] ?? '';
+            String imageUrl = value['image'] ?? '';
+            
+            return ChoiceChip(
+              avatar: imageUrl.isNotEmpty
+                  ? Image.network(
+                      imageUrl.startsWith('http')
+                          ? imageUrl
+                          : 'https://ismartdemo.com.tw/image/$imageUrl',
+                      width: 24,
+                      height: 24,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.image_not_supported,
+                          size: 24,
+                          color: Colors.grey,
+                        );
+                      },
+                    )
+                  : null,
+              label: Text(optionText),
+              selected: _selectedOptions[option['product_option_id']] ==
+                  value['product_option_value_id'],
+              onSelected: (isSelected) {
+                if (isSelected) {
+                  setState(() {
+                    _selectedOptions[option['product_option_id']] =
+                        value['product_option_value_id'];
+                    _calculateFinalPrice();
+                    // 更新主圖
+                    if (value['image'] != null && value['image'].isNotEmpty) {
+                      _updateCurrentImage(value['image']);
                     }
-                  },
-                );
-              }).toList(),
+                  });
+                }
+              },
+            );
+          }).toList(),
         ),
 
         // 顯示選中的顏色名稱和圖片
@@ -999,47 +1003,47 @@ $productName
           runSpacing: 8,
           children:
               (option['product_option_value'] as List).map<Widget>((value) {
-                // 構建選項顯示文本，優先使用 name
-                String optionText = value['name']?.toString().trim().isNotEmpty == true
-                    ? value['name']
-                    : value['disname'] ?? '';
-                String imageUrl = value['image'] ?? '';
-                // 處理圖片路徑
-                if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-                  imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
-                }
-
-                return ChoiceChip(
-                  avatar: imageUrl.isNotEmpty
-                      ? Image.network(
-                          imageUrl,
-                          width: 24,
-                          height: 24,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Icon(
-                              Icons.image_not_supported,
-                              size: 24,
-                              color: Colors.grey,
-                            );
-                          },
-                        )
-                      : null,
-                  label: Text(optionText),
-                  selected:
-                      _selectedOptions[option['product_option_id']] ==
-                      value['product_option_value_id'],
-                  onSelected: (isSelected) {
-                    if (isSelected) {
-                      setState(() {
-                        _selectedOptions[option['product_option_id']] =
-                            value['product_option_value_id'];
-                        _calculateFinalPrice();
-                      });
+            String optionText = value['name']?.toString().trim().isNotEmpty == true
+                ? value['name']
+                : value['disname'] ?? '';
+            String imageUrl = value['image'] ?? '';
+            
+            return ChoiceChip(
+              avatar: imageUrl.isNotEmpty
+                  ? Image.network(
+                      imageUrl.startsWith('http')
+                          ? imageUrl
+                          : 'https://ismartdemo.com.tw/image/$imageUrl',
+                      width: 24,
+                      height: 24,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.image_not_supported,
+                          size: 24,
+                          color: Colors.grey,
+                        );
+                      },
+                    )
+                  : null,
+              label: Text(optionText),
+              selected: _selectedOptions[option['product_option_id']] ==
+                  value['product_option_value_id'],
+              onSelected: (isSelected) {
+                if (isSelected) {
+                  setState(() {
+                    _selectedOptions[option['product_option_id']] =
+                        value['product_option_value_id'];
+                    _calculateFinalPrice();
+                    // 更新主圖
+                    if (value['image'] != null && value['image'].isNotEmpty) {
+                      _updateCurrentImage(value['image']);
                     }
-                  },
-                );
-              }).toList(),
+                  });
+                }
+              },
+            );
+          }).toList(),
         ),
 
         // 顯示選中的尺寸和圖片
@@ -1305,17 +1309,14 @@ $productName
 
   // 構建下拉選單選項
   Widget _buildSelectOptions(Map<String, dynamic> option) {
-    // 獲取選項列表
     List<dynamic> optionValues = option['product_option_value'] as List;
 
-    // 確保有選中的選項
     if (!_selectedOptions.containsKey(option['product_option_id']) &&
         optionValues.isNotEmpty) {
       _selectedOptions[option['product_option_id']] =
           optionValues[0]['product_option_value_id'];
     }
 
-    // 獲取當前選中的選項名稱和圖片
     String selectedName = '';
     String selectedImage = '';
     for (var value in optionValues) {
@@ -1332,7 +1333,6 @@ $productName
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 下拉選單
         Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
@@ -1343,32 +1343,28 @@ $productName
           child: DropdownButton<String>(
             value: _selectedOptions[option['product_option_id']],
             isExpanded: true,
-            underline: Container(), // 移除下劃線
+            underline: Container(),
             icon: const Icon(Icons.arrow_drop_down),
             hint: const Text('請選擇'),
             items: optionValues.map<DropdownMenuItem<String>>((value) {
-              // 構建選項顯示文本，優先使用 name
               String optionText = value['name']?.toString().trim().isNotEmpty == true
                   ? value['name']
                   : value['disname'] ?? '';
               String imageUrl = value['image'] ?? '';
-              // 處理圖片路徑
-              if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-                imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
-              }
 
               return DropdownMenuItem<String>(
                 value: value['product_option_value_id'],
                 child: Row(
                   children: [
-                    // 如果有圖片，顯示圖片
                     if (imageUrl.isNotEmpty)
                       Container(
                         width: 24,
                         height: 24,
                         margin: const EdgeInsets.only(right: 8),
                         child: Image.network(
-                          imageUrl,
+                          imageUrl.startsWith('http')
+                              ? imageUrl
+                              : 'https://ismartdemo.com.tw/image/$imageUrl',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
@@ -1379,7 +1375,6 @@ $productName
                           },
                         ),
                       ),
-                    // 選項文字
                     Expanded(
                       child: Text(optionText),
                     ),
@@ -1392,6 +1387,16 @@ $productName
                 setState(() {
                   _selectedOptions[option['product_option_id']] = newValue;
                   _calculateFinalPrice();
+                  // 更新主圖
+                  var selectedOption = optionValues.firstWhere(
+                    (value) => value['product_option_value_id'] == newValue,
+                    orElse: () => null,
+                  );
+                  if (selectedOption != null && 
+                      selectedOption['image'] != null && 
+                      selectedOption['image'].isNotEmpty) {
+                    _updateCurrentImage(selectedOption['image']);
+                  }
                 });
               }
             },
@@ -1554,5 +1559,16 @@ $productName
           ),
       ],
     );
+  }
+
+  // 更新當前顯示的圖片
+  void _updateCurrentImage(String? newImage) {
+    if (newImage != null && newImage.isNotEmpty) {
+      setState(() {
+        _currentImage = newImage.startsWith('http')
+            ? newImage
+            : 'https://ismartdemo.com.tw/image/$newImage';
+      });
+    }
   }
 }
