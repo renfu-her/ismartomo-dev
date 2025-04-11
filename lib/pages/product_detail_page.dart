@@ -24,14 +24,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   String _errorMessage = '';
   Map<String, dynamic> _productData = {};
   int _quantity = 1;
-  // 使用 Map 存儲不同選項類型的選擇
   final Map<String, String> _selectedOptions = {};
-  double _basePrice = 0.0; // 基本價格
-  double _finalPrice = 0.0; // 最終價格（含選項）
-  bool _isPriceZero = false; // 標記價格是否為零
-  bool _isFavorite = false; // 標記是否為收藏
-  String _currentImage = ''; // 添加當前顯示圖片的狀態
-  int _currentImageIndex = 0; // 添加當前圖片索引
+  double _basePrice = 0.0;
+  double _finalPrice = 0.0;
+  bool _isPriceZero = false;
+  bool _isFavorite = false;
+  String _currentImage = '';
+  int _currentImageIndex = 0;
+  List<String> _carouselImages = [];
 
   @override
   void initState() {
@@ -49,16 +49,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       if (widget.productDetails['product_id'] != null) {
         print('正在獲取產品詳情，產品ID: ${widget.productDetails['product_id']}');
 
-        // 直接使用 widget.productDetails 中的數據，不再發送 API 請求
         setState(() {
           _isLoading = false;
           _productData = widget.productDetails;
           _initializePrice();
-          // 初始化當前圖片
-          _currentImage = _productData['thumb'] ?? '';
+          _carouselImages = _getAllProductImages();
+          if (_carouselImages.isNotEmpty) {
+            _currentImage = _carouselImages[0].startsWith('http')
+                ? _carouselImages[0]
+                : 'https://ismartdemo.com.tw/image/${_carouselImages[0]}';
+          }
         });
 
-        // 如果需要更詳細的產品信息，可以發送 API 請求
         try {
           final response = await _apiService.getProductDetails(
             widget.productDetails['product_id'].toString(),
@@ -71,15 +73,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             setState(() {
               _productData = response['product'][0];
               _initializePrice();
-              // 更新當前圖片
-              _currentImage = _productData['thumb'] ?? '';
-              // 初始化選項
+              _carouselImages = _getAllProductImages();
+              if (_carouselImages.isNotEmpty) {
+                _currentImage = _carouselImages[0].startsWith('http')
+                    ? _carouselImages[0]
+                    : 'https://ismartdemo.com.tw/image/${_carouselImages[0]}';
+              }
               _initializeOptions();
             });
           }
         } catch (e) {
           print('獲取詳細產品信息失敗，使用基本信息: ${e.toString()}');
-          // 如果 API 請求失敗，我們仍然使用 widget.productDetails 中的基本數據
         }
       } else {
         setState(() {
@@ -95,10 +99,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
-  // 初始化基本價格
   void _initializePrice() {
     if (_productData['price'] != null) {
-      // 移除貨幣符號和空格，轉換為數字
       String priceStr = _productData['price'].toString().replaceAll(
         RegExp(r'[^\d.]'),
         '',
@@ -120,41 +122,32 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     }
   }
 
-  // 初始化選項
   void _initializeOptions() {
     if (_productData.containsKey('options') &&
         _productData['options'] is List &&
         _productData['options'].isNotEmpty) {
-      // 遍歷所有選項類型
       for (var option in _productData['options']) {
         if (option['product_option_value'] is List &&
             option['product_option_value'].isNotEmpty) {
-          // 為每個選項類型選擇第一個值
           _selectedOptions[option['name']] =
               option['product_option_value'][0]['product_option_value_id'];
         }
       }
 
-      // 計算初始價格
       _calculateFinalPrice();
     }
   }
 
-  // 計算最終價格，考慮所有選中的選項
   void _calculateFinalPrice() {
-    // 重置為基本價格
     _finalPrice = _basePrice;
 
     if (_productData.containsKey('options') &&
         _productData['options'] is List) {
-      // 遍歷所有選項類型
       for (var option in _productData['options']) {
         if (option['product_option_value'] is List) {
-          // 查找當前選中的選項值
           for (var value in option['product_option_value']) {
             if (_selectedOptions[option['name']] ==
                 value['product_option_value_id']) {
-              // 應用價格調整
               _applyPriceAdjustment(value);
               break;
             }
@@ -163,13 +156,11 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       }
     }
 
-    // 確保價格不為負數
     if (_finalPrice < 0) {
       _finalPrice = 0;
     }
   }
 
-  // 應用價格調整
   void _applyPriceAdjustment(Map<String, dynamic> optionValue) {
     if (optionValue.containsKey('price') &&
         optionValue.containsKey('price_prefix')) {
@@ -218,7 +209,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   void _addToCart() async {
     try {
-      // 檢查登入狀態
       final userService = Provider.of<UserService>(context, listen: false);
       if (!userService.isLoggedIn) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -235,7 +225,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         return;
       }
 
-      // 檢查是否有必選選項未選擇
       bool hasRequiredOptions = false;
       bool allRequiredOptionsSelected = true;
       List<String> missingOptions = [];
@@ -243,18 +232,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       if (_productData.containsKey('options') &&
           _productData['options'] is List) {
         for (var option in _productData['options']) {
-          // 檢查是否為必填選項類型
           if (option['type'] == 'select' || 
               option['type'] == 'radio' || 
               option['type'] == 'datetime') {
             hasRequiredOptions = true;
             
-            // 檢查選項是否已選擇
             if (!_selectedOptions.containsKey(option['product_option_id']) ||
                 _selectedOptions[option['product_option_id']] == null ||
                 _selectedOptions[option['product_option_id']]!.isEmpty) {
               allRequiredOptionsSelected = false;
-              // 獲取選項名稱
               String optionName = option['name']?.toString().trim().isNotEmpty == true
                   ? option['name']
                   : option['disname'] ?? '';
@@ -265,7 +251,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       }
 
       if (hasRequiredOptions && !allRequiredOptionsSelected) {
-        // 顯示缺少的選項
         String missingOptionsText = missingOptions.join('、');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -276,7 +261,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         return;
       }
 
-      // 準備選項數據
       Map<String, String> options = {};
       if (_productData.containsKey('options') &&
           _productData['options'] is List) {
@@ -288,7 +272,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         }
       }
 
-      // 顯示加載指示器
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -297,17 +280,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         },
       );
 
-      // 調用 API 加入購物車
       final response = await _apiService.addToCart(
         productId: _productData['product_id'].toString(),
         quantity: _quantity,
         options: options.isNotEmpty ? options : null,
       );
 
-      // 關閉加載指示器
       Navigator.of(context).pop();
 
-      // 顯示成功消息
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -322,17 +302,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
       );
     } catch (e) {
-      // 關閉加載指示器
       Navigator.of(context, rootNavigator: true).pop();
 
-      // 顯示錯誤消息
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('加入購物車失敗: ${e.toString()}')));
     }
   }
 
-  // 分享產品資訊
   void _shareProduct() {
     showModalBottomSheet(
       context: context,
@@ -351,7 +328,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // 系統分享
                     _buildShareButton(
                       icon: Icons.share,
                       label: '分享',
@@ -361,7 +337,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         final String productPrice = _productData['price'] ?? '';
                         final String shareUrl = _productData['shref'] ?? '';
 
-                        // 構建分享文本
                         final String shareText = '''
 $productName
 價格: $productPrice
@@ -373,7 +348,6 @@ $productName
                         Navigator.pop(context);
                       },
                     ),
-                    // 複製連結
                     _buildShareButton(
                       icon: Icons.link,
                       label: '複製連結',
@@ -397,7 +371,6 @@ $productName
     );
   }
 
-  // 添加分享按鈕小工具
   Widget _buildShareButton({
     required IconData icon,
     required String label,
@@ -426,21 +399,16 @@ $productName
 
   @override
   Widget build(BuildContext context) {
-    // 根據 quantity 判斷產品是否缺貨
     bool isOutOfStock =
         _productData.containsKey('quantity') &&
         (_productData['quantity'] == null ||
             int.tryParse(_productData['quantity'].toString()) == 0 ||
             int.tryParse(_productData['quantity'].toString()) == null);
 
-    // 獲取所有產品圖片
-    List<String> allImages = _getAllProductImages();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('產品明細'),
         actions: [
-          // 只有當價格不為零時才顯示愛心按鈕
           if (!_isPriceZero)
             Consumer<UserService>(
               builder: (context, userService, child) {
@@ -482,7 +450,6 @@ $productName
                 );
               },
             ),
-          // 分享按鈕
           IconButton(icon: const Icon(Icons.share), onPressed: _shareProduct),
         ],
       ),
@@ -511,14 +478,12 @@ $productName
               ? const Center(child: Text('沒有找到產品詳情'))
               : Column(
                 children: [
-                  // 主要內容區域（可滾動）
                   Expanded(
                     child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 產品圖片輪播
-                          if (allImages.isNotEmpty)
+                          if (_carouselImages.isNotEmpty)
                             Stack(
                               children: [
                                 Container(
@@ -530,12 +495,12 @@ $productName
                                       height: 250,
                                       viewportFraction: 1.0,
                                       initialPage: _currentImageIndex,
-                                      enableInfiniteScroll: allImages.length > 1,
+                                      enableInfiniteScroll: _carouselImages.length > 1,
                                       onPageChanged: (index, reason) {
                                         _updateCurrentImageIndex(index);
                                       },
                                     ),
-                                    items: allImages.map((image) {
+                                    items: _carouselImages.map((image) {
                                       return Builder(
                                         builder: (BuildContext context) {
                                           return Container(
@@ -562,15 +527,14 @@ $productName
                                     }).toList(),
                                   ),
                                 ),
-                                // 圖片指示器
-                                if (allImages.length > 1)
+                                if (_carouselImages.length > 1)
                                   Positioned(
                                     bottom: 10,
                                     left: 0,
                                     right: 0,
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
-                                      children: allImages.asMap().entries.map((entry) {
+                                      children: _carouselImages.asMap().entries.map((entry) {
                                         return Container(
                                           width: 8.0,
                                           height: 8.0,
@@ -588,13 +552,11 @@ $productName
                               ],
                             ),
 
-                          // 產品信息
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // 產品標題和價格區域
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -609,7 +571,6 @@ $productName
                                     ),
                                     const SizedBox(height: 16),
 
-                                    // 價格顯示 - 只有當價格不為零時才顯示
                                     if (!_isPriceZero)
                                       Row(
                                         children: [
@@ -620,7 +581,6 @@ $productName
                                               fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                          // 如果有特價，顯示原價（加上橫線）和特價
                                           if (_productData.containsKey(
                                                 'special',
                                               ) &&
@@ -630,7 +590,6 @@ $productName
                                               crossAxisAlignment:
                                                   CrossAxisAlignment.start,
                                               children: [
-                                                // 原價（加上橫線）
                                                 Text(
                                                   '${_productData['price']}',
                                                   style: TextStyle(
@@ -641,7 +600,6 @@ $productName
                                                             .lineThrough,
                                                   ),
                                                 ),
-                                                // 特價
                                                 Text(
                                                   '${_productData['special']}',
                                                   style: TextStyle(
@@ -670,7 +628,6 @@ $productName
 
                                 const SizedBox(height: 16),
 
-                                // 庫存狀態 - 根據 quantity 調整顏色和顯示
                                 Container(
                                   margin: const EdgeInsets.only(top: 8.0),
                                   padding: const EdgeInsets.symmetric(
@@ -704,7 +661,6 @@ $productName
 
                                 const SizedBox(height: 24),
 
-                                // 產品選項
                                 if (_productData.containsKey('options') &&
                                     _productData['options'] is List &&
                                     _productData['options'].isNotEmpty)
@@ -712,7 +668,6 @@ $productName
 
                                 const SizedBox(height: 24),
 
-                                // 數量選擇 - 缺貨時或價格為零時隱藏
                                 if (!isOutOfStock && !_isPriceZero)
                                   Row(
                                     children: [
@@ -735,7 +690,6 @@ $productName
                                         ),
                                         child: Row(
                                           children: [
-                                            // 減號按鈕
                                             InkWell(
                                               onTap: _decreaseQuantity,
                                               child: Container(
@@ -748,7 +702,6 @@ $productName
                                                 ),
                                               ),
                                             ),
-                                            // 數量顯示
                                             Container(
                                               width: 60,
                                               height: 40,
@@ -770,7 +723,6 @@ $productName
                                                 ),
                                               ),
                                             ),
-                                            // 加號按鈕
                                             InkWell(
                                               onTap: _increaseQuantity,
                                               child: Container(
@@ -791,7 +743,6 @@ $productName
 
                                 const SizedBox(height: 24),
 
-                                // 描述標題
                                 const Text(
                                   '描述',
                                   style: TextStyle(
@@ -801,7 +752,6 @@ $productName
                                 ),
                                 const SizedBox(height: 8),
 
-                                // 產品描述 - 使用 description_json
                                 if (_productData.containsKey(
                                       'description_json',
                                     ) &&
@@ -811,7 +761,6 @@ $productName
                                         CrossAxisAlignment.start,
                                     children: _buildDescriptionFromJson(),
                                   )
-                                // 如果沒有 description_json，則使用 description
                                 else if (_productData['description'] != null)
                                   Html(
                                     data: _productData['description'],
@@ -833,7 +782,6 @@ $productName
                     ),
                   ),
 
-                  // 底部固定的購買區域 - 價格為零時隱藏
                   if (!_isPriceZero)
                     Container(
                       color: Colors.white,
@@ -895,7 +843,6 @@ $productName
     List<Widget> optionWidgets = [];
 
     for (var option in _productData['options']) {
-      // 獲取選項名稱，優先使用 name，為空時使用 disname
       String optionName = option['name']?.toString().trim().isNotEmpty == true
           ? option['name']
           : option['disname'] ?? '';
@@ -909,7 +856,6 @@ $productName
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            // 使用正確的條件渲染方式
             if (option['type'] == 'radio')
               optionName.toLowerCase().contains('color') ||
                       optionName.toLowerCase().contains('顏色')
@@ -928,12 +874,10 @@ $productName
     return optionWidgets;
   }
 
-  // 構建顏色選項
   Widget _buildColorOptions(Map<String, dynamic> option) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 顏色選項
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -971,10 +915,7 @@ $productName
                     _selectedOptions[option['product_option_id']] =
                         value['product_option_value_id'];
                     _calculateFinalPrice();
-                    // 更新主圖
-                    if (value['image'] != null && value['image'].isNotEmpty) {
-                      _updateCurrentImage(value['image']);
-                    }
+                    _updateCurrentImage(value['image']);
                   });
                 }
               },
@@ -982,13 +923,11 @@ $productName
           }).toList(),
         ),
 
-        // 顯示選中的顏色名稱和圖片
         if (_selectedOptions.containsKey(option['product_option_id']))
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Builder(
               builder: (context) {
-                // 查找選中的選項
                 var selectedValue = (option['product_option_value'] as List)
                     .firstWhere(
                       (value) =>
@@ -1002,7 +941,6 @@ $productName
                       ? selectedValue['name']
                       : selectedValue['disname'] ?? '';
                   String imageUrl = selectedValue['image'] ?? '';
-                  // 處理圖片路徑
                   if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
                     imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
                   }
@@ -1045,12 +983,10 @@ $productName
     );
   }
 
-  // 構建尺寸選項
   Widget _buildSizeOptions(Map<String, dynamic> option) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 尺寸選項
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -1088,10 +1024,7 @@ $productName
                     _selectedOptions[option['product_option_id']] =
                         value['product_option_value_id'];
                     _calculateFinalPrice();
-                    // 更新主圖
-                    if (value['image'] != null && value['image'].isNotEmpty) {
-                      _updateCurrentImage(value['image']);
-                    }
+                    _updateCurrentImage(value['image']);
                   });
                 }
               },
@@ -1099,13 +1032,11 @@ $productName
           }).toList(),
         ),
 
-        // 顯示選中的尺寸和圖片
         if (_selectedOptions.containsKey(option['product_option_id']))
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Builder(
               builder: (context) {
-                // 查找選中的選項
                 var selectedValue = (option['product_option_value'] as List)
                     .firstWhere(
                       (value) =>
@@ -1119,7 +1050,6 @@ $productName
                       ? selectedValue['name']
                       : selectedValue['disname'] ?? '';
                   String imageUrl = selectedValue['image'] ?? '';
-                  // 處理圖片路徑
                   if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
                     imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
                   }
@@ -1162,7 +1092,6 @@ $productName
     );
   }
 
-  // 根據顏色名稱獲取對應的顏色
   Color _getColorFromName(String colorName) {
     colorName = colorName.toLowerCase();
 
@@ -1191,18 +1120,16 @@ $productName
     } else if (colorName.contains('棕') || colorName.contains('brown')) {
       return Colors.brown;
     } else {
-      return Colors.grey.shade300; // 默認顏色
+      return Colors.grey.shade300;
     }
   }
 
   List<Widget> _buildDescriptionFromJson() {
     List<Widget> descriptionWidgets = [];
 
-    // 檢查是否有產品屬性信息（類別、運費、單位等）
     bool hasProductAttributes = false;
     List<Widget> attributeWidgets = [];
 
-    // 先遍歷一次找出產品屬性信息
     for (var item in _productData['description_json']) {
       if (item['type'] == 'p' &&
           item['content'] != null &&
@@ -1222,10 +1149,8 @@ $productName
       }
     }
 
-    // 如果有產品屬性信息，先添加這些信息
     if (hasProductAttributes) {
       descriptionWidgets.addAll(attributeWidgets);
-      // 添加一個分隔線
       descriptionWidgets.add(
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
@@ -1234,25 +1159,20 @@ $productName
       );
     }
 
-    // 再次遍歷，添加其他描述內容
     for (var item in _productData['description_json']) {
       if (item['type'] == 'p') {
         String content = item['content']?.toString() ?? '';
-        // 跳過已經添加過的產品屬性信息
         if (content.contains('類別：') ||
             content.contains('運費：') ||
             content.contains('單位：')) {
           continue;
         }
 
-        // 處理段落，包括空行
         if (content.isEmpty) {
-          // 如果內容為空，添加一個空行
           descriptionWidgets.add(
-            const SizedBox(height: 16), // 空行的高度
+            const SizedBox(height: 16),
           );
         } else {
-          // 如果有內容，顯示文本
           descriptionWidgets.add(
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -1261,7 +1181,6 @@ $productName
           );
         }
       } else if (item['type'] == 'img' && item['content'] != null) {
-        // 處理圖片
         descriptionWidgets.add(
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -1287,24 +1206,19 @@ $productName
     return descriptionWidgets;
   }
 
-  // 格式化價格顯示
   String _formatPrice(double price) {
-    // 四捨五入到小數點後兩位
     double roundedPrice = (price * 100).round() / 100;
-    // 如果是整數，不顯示小數部分
     if (roundedPrice == roundedPrice.toInt()) {
       return 'NT\$${roundedPrice.toInt()}';
     }
     return 'NT\$${roundedPrice.toStringAsFixed(2)}';
   }
 
-  // 處理特殊字符轉換
   String _formatSpecialCharacters(String text) {
     if (text.isEmpty) {
       return '';
     }
 
-    // 創建一個映射表，將HTML實體轉換為對應的特殊字符
     final Map<String, String> htmlEntities = {
       '&quot;': '"',
       '&amp;': '&',
@@ -1351,7 +1265,6 @@ $productName
       '&iquest;': '¿',
     };
 
-    // 替換所有HTML實體
     String result = text;
     htmlEntities.forEach((entity, char) {
       result = result.replaceAll(entity, char);
@@ -1360,7 +1273,6 @@ $productName
     return result;
   }
 
-  // 構建下拉選單選項
   Widget _buildSelectOptions(Map<String, dynamic> option) {
     List<dynamic> optionValues = option['product_option_value'] as List;
 
@@ -1440,29 +1352,18 @@ $productName
                 setState(() {
                   _selectedOptions[option['product_option_id']] = newValue;
                   _calculateFinalPrice();
-                  // 更新主圖
-                  var selectedOption = optionValues.firstWhere(
-                    (value) => value['product_option_value_id'] == newValue,
-                    orElse: () => null,
-                  );
-                  if (selectedOption != null && 
-                      selectedOption['image'] != null && 
-                      selectedOption['image'].isNotEmpty) {
-                    _updateCurrentImage(selectedOption['image']);
-                  }
+                  _updateCurrentImage(newValue);
                 });
               }
             },
           ),
         ),
 
-        // 顯示選中的選項名稱和圖片
         if (selectedName.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Row(
               children: [
-                // 如果有圖片，顯示圖片
                 if (selectedImage.isNotEmpty)
                   Container(
                     width: 24,
@@ -1493,18 +1394,14 @@ $productName
     );
   }
 
-  // 構建日期時間選項
   Widget _buildDateTimeOptions(Map<String, dynamic> option) {
-    // 獲取當前選中的日期時間值
     String currentValue = _selectedOptions[option['product_option_id']] ?? '';
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 日期時間選擇按鈕
         InkWell(
           onTap: () async {
-            // 選擇日期
             final DateTime? date = await showDatePicker(
               context: context,
               initialDate: currentValue.isNotEmpty 
@@ -1512,7 +1409,7 @@ $productName
                   : DateTime.now(),
               firstDate: DateTime.now(),
               lastDate: DateTime.now().add(const Duration(days: 365)),
-              locale: const Locale('zh', 'TW'), // 設置為繁體中文
+              locale: const Locale('zh', 'TW'),
               builder: (context, child) {
                 return Theme(
                   data: Theme.of(context).copyWith(
@@ -1528,7 +1425,6 @@ $productName
             );
 
             if (date != null) {
-              // 選擇時間
               final TimeOfDay? time = await showTimePicker(
                 context: context,
                 initialTime: currentValue.isNotEmpty
@@ -1553,7 +1449,6 @@ $productName
               );
 
               if (time != null) {
-                // 組合日期和時間
                 final DateTime selectedDateTime = DateTime(
                   date.year,
                   date.month,
@@ -1598,7 +1493,6 @@ $productName
             ),
           ),
         ),
-        // 顯示已選擇的日期時間
         if (currentValue.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
@@ -1614,16 +1508,13 @@ $productName
     );
   }
 
-  // 獲取所有產品圖片
   List<String> _getAllProductImages() {
     List<String> images = [];
     
-    // 添加主圖
     if (_productData['thumb'] != null) {
       images.add(_productData['thumb']);
     }
     
-    // 添加其他圖片
     if (_productData['images'] != null && _productData['images'] is List) {
       for (var image in _productData['images']) {
         if (image['image'] != null) {
@@ -1635,26 +1526,30 @@ $productName
     return images;
   }
 
-  // 更新當前顯示的圖片
   void _updateCurrentImage(String? newImage) {
     if (newImage != null && newImage.isNotEmpty) {
       setState(() {
-        _currentImage = newImage.startsWith('http')
+        String fullImageUrl = newImage.startsWith('http')
             ? newImage
             : 'https://ismartdemo.com.tw/image/$newImage';
+        
+        _currentImage = fullImageUrl;
+        
+        if (!_carouselImages.contains(newImage)) {
+          _carouselImages = [newImage];
+          _currentImageIndex = 0;
+        }
       });
     }
   }
 
-  // 更新當前圖片索引
   void _updateCurrentImageIndex(int index) {
     setState(() {
       _currentImageIndex = index;
-      List<String> allImages = _getAllProductImages();
-      if (index < allImages.length) {
-        _currentImage = allImages[index].startsWith('http')
-            ? allImages[index]
-            : 'https://ismartdemo.com.tw/image/${allImages[index]}';
+      if (index < _carouselImages.length) {
+        _currentImage = _carouselImages[index].startsWith('http')
+            ? _carouselImages[index]
+            : 'https://ismartdemo.com.tw/image/${_carouselImages[index]}';
       }
     });
   }
