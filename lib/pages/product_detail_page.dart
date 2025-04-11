@@ -915,7 +915,9 @@ $productName
                     _selectedOptions[option['product_option_id']] =
                         value['product_option_value_id'];
                     _calculateFinalPrice();
-                    _updateCurrentImage(value['image']);
+                    if (value['image'] != null && value['image'].isNotEmpty) {
+                      _updateCurrentImage(value['image']);
+                    }
                   });
                 }
               },
@@ -1276,12 +1278,6 @@ $productName
   Widget _buildSelectOptions(Map<String, dynamic> option) {
     List<dynamic> optionValues = option['product_option_value'] as List;
 
-    if (!_selectedOptions.containsKey(option['product_option_id']) &&
-        optionValues.isNotEmpty) {
-      _selectedOptions[option['product_option_id']] =
-          optionValues[0]['product_option_value_id'];
-    }
-
     String selectedName = '';
     String selectedImage = '';
     for (var value in optionValues) {
@@ -1306,11 +1302,13 @@ $productName
             borderRadius: BorderRadius.circular(8),
           ),
           child: DropdownButton<String>(
-            value: _selectedOptions[option['product_option_id']],
+            value: _selectedOptions.containsKey(option['product_option_id']) 
+                ? _selectedOptions[option['product_option_id']] 
+                : null,
             isExpanded: true,
             underline: Container(),
             icon: const Icon(Icons.arrow_drop_down),
-            hint: const Text('請選擇'),
+            hint: Text('請選擇${option['name'] ?? ''}...'),
             items: optionValues.map<DropdownMenuItem<String>>((value) {
               String optionText = value['name']?.toString().trim().isNotEmpty == true
                   ? value['name']
@@ -1352,7 +1350,16 @@ $productName
                 setState(() {
                   _selectedOptions[option['product_option_id']] = newValue;
                   _calculateFinalPrice();
-                  _updateCurrentImage(newValue);
+                  
+                  var selectedOption = optionValues.firstWhere(
+                    (value) => value['product_option_value_id'] == newValue,
+                    orElse: () => null,
+                  );
+                  if (selectedOption != null && 
+                      selectedOption['image'] != null && 
+                      selectedOption['image'].isNotEmpty) {
+                    _updateCurrentImage(selectedOption['image']);
+                  }
                 });
               }
             },
