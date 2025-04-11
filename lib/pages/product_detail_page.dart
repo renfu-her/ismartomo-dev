@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Map<String, dynamic> productDetails;
@@ -30,6 +31,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   bool _isPriceZero = false; // 標記價格是否為零
   bool _isFavorite = false; // 標記是否為收藏
   String _currentImage = ''; // 添加當前顯示圖片的狀態
+  int _currentImageIndex = 0; // 添加當前圖片索引
 
   @override
   void initState() {
@@ -431,6 +433,9 @@ $productName
             int.tryParse(_productData['quantity'].toString()) == 0 ||
             int.tryParse(_productData['quantity'].toString()) == null);
 
+    // 獲取所有產品圖片
+    List<String> allImages = _getAllProductImages();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('產品明細'),
@@ -512,27 +517,75 @@ $productName
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // 產品圖片 - 使用 _currentImage
-                          if (_currentImage.isNotEmpty)
-                            Container(
-                              width: double.infinity,
-                              height: 250,
-                              color: Colors.white,
-                              child: Image.network(
-                                _currentImage.startsWith('http')
-                                    ? _currentImage
-                                    : 'https://ismartdemo.com.tw/image/$_currentImage',
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      size: 80,
-                                      color: Colors.grey,
+                          // 產品圖片輪播
+                          if (allImages.isNotEmpty)
+                            Stack(
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  height: 250,
+                                  color: Colors.white,
+                                  child: CarouselSlider(
+                                    options: CarouselOptions(
+                                      height: 250,
+                                      viewportFraction: 1.0,
+                                      initialPage: _currentImageIndex,
+                                      enableInfiniteScroll: allImages.length > 1,
+                                      onPageChanged: (index, reason) {
+                                        _updateCurrentImageIndex(index);
+                                      },
                                     ),
-                                  );
-                                },
-                              ),
+                                    items: allImages.map((image) {
+                                      return Builder(
+                                        builder: (BuildContext context) {
+                                          return Container(
+                                            width: double.infinity,
+                                            margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                                            child: Image.network(
+                                              image.startsWith('http')
+                                                  ? image
+                                                  : 'https://ismartdemo.com.tw/image/$image',
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return const Center(
+                                                  child: Icon(
+                                                    Icons.image_not_supported,
+                                                    size: 80,
+                                                    color: Colors.grey,
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                                // 圖片指示器
+                                if (allImages.length > 1)
+                                  Positioned(
+                                    bottom: 10,
+                                    left: 0,
+                                    right: 0,
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: allImages.asMap().entries.map((entry) {
+                                        return Container(
+                                          width: 8.0,
+                                          height: 8.0,
+                                          margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Theme.of(context).primaryColor.withOpacity(
+                                              _currentImageIndex == entry.key ? 0.9 : 0.4,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                              ],
                             ),
 
                           // 產品信息
@@ -1561,6 +1614,27 @@ $productName
     );
   }
 
+  // 獲取所有產品圖片
+  List<String> _getAllProductImages() {
+    List<String> images = [];
+    
+    // 添加主圖
+    if (_productData['thumb'] != null) {
+      images.add(_productData['thumb']);
+    }
+    
+    // 添加其他圖片
+    if (_productData['images'] != null && _productData['images'] is List) {
+      for (var image in _productData['images']) {
+        if (image['image'] != null) {
+          images.add(image['image']);
+        }
+      }
+    }
+    
+    return images;
+  }
+
   // 更新當前顯示的圖片
   void _updateCurrentImage(String? newImage) {
     if (newImage != null && newImage.isNotEmpty) {
@@ -1570,5 +1644,18 @@ $productName
             : 'https://ismartdemo.com.tw/image/$newImage';
       });
     }
+  }
+
+  // 更新當前圖片索引
+  void _updateCurrentImageIndex(int index) {
+    setState(() {
+      _currentImageIndex = index;
+      List<String> allImages = _getAllProductImages();
+      if (index < allImages.length) {
+        _currentImage = allImages[index].startsWith('http')
+            ? allImages[index]
+            : 'https://ismartdemo.com.tw/image/${allImages[index]}';
+      }
+    });
   }
 }
