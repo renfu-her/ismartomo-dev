@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://ismartdemo.com.tw/index.php?route=extension/module/api';
+  static const String _baseUrl = 'https://ismartomo.com.tw/index.php?route=extension/module/api';
   static const String _apiKey = 'CNQ4eX5WcbgFQVkBXFKmP9AE2AYUpU2HySz2wFhwCZ3qExG6Tep7ZCSZygwzYfsF';
   
   // 獲取 API Key

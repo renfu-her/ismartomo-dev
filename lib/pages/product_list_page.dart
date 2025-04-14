@@ -326,7 +326,7 @@ class _ProductListPageState extends State<ProductListPage> {
                     ? Image.network(
                         product['thumb'].startsWith('http')
                             ? product['thumb']
-                            : 'https://ismartdemo.com.tw/image/${product['thumb']}',
+                            : 'https://ismartomo.com.tw/image/${product['thumb']}',
                         fit: BoxFit.cover, // 使用 cover 而不是 contain，確保圖片填滿整個區域
                         errorBuilder: (context, error, stackTrace) {
                           return const Center(

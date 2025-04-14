@@ -259,7 +259,7 @@ class _FavoritePageState extends State<FavoritePage> {
                   child: Image.network(
                     product['thumb'].startsWith('http') 
                         ? product['thumb'] 
-                        : 'https://ismartdemo.com.tw/image/${product['thumb']}',
+                        : 'https://ismartomo.com.tw/image/${product['thumb']}',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return const Center(
