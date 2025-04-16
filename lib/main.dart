@@ -1089,12 +1089,13 @@ class ProductCard extends StatelessWidget {
                   // 底部區域：價格、愛心、購物車分為三欄
                   Row(
                     children: [
-                      // 價格佔據約50%的寬度 - 只有當價格不為零或空時才顯示
+                      // 價格佔據約60%的寬度 - 只有當價格不為零或空時才顯示
                       Expanded(
-                        flex: 5, // 5/10 = 50%
+                        flex: 6, // 6/10 = 60%
                         child: !isPriceZeroOrEmpty && product['price'] != null
                           ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 // 如果有特價，顯示原價（加上橫線）和特價
                                 if (product['special'] != null && product['special'] != false)
@@ -1105,6 +1106,8 @@ class ProductCard extends StatelessWidget {
                                       color: Colors.grey,
                                       decoration: TextDecoration.lineThrough,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 // 顯示價格（如果有特價則顯示特價，否則顯示原價）
                                 Text(
@@ -1116,6 +1119,8 @@ class ProductCard extends StatelessWidget {
                                     color: Colors.red,
                                     fontWeight: FontWeight.bold,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             )
@@ -1135,7 +1140,7 @@ class ProductCard extends StatelessWidget {
                                 constraints: const BoxConstraints(),
                                 icon: FaIcon(
                                   isFavorite ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
-                                  size: 18,
+                                  size: 16,
                                   color: Colors.red,
                                 ),
                                 onPressed: () {
@@ -1171,13 +1176,13 @@ class ProductCard extends StatelessWidget {
                         ),
                       // 根據價格顯示不同的圖標：價格為0顯示詳細資料圖標，否則顯示購物車圖標
                       Expanded(
-                        flex: 3, // 3/10 = 30%
+                        flex: 2, // 2/10 = 20%
                         child: IconButton(
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           icon: FaIcon(
                             isPriceZeroOrEmpty ? FontAwesomeIcons.circleInfo : FontAwesomeIcons.cartShopping,
-                            size: 18,
+                            size: 16,
                           ),
                           onPressed: () {
                             // 導航到產品詳情頁面，與點擊產品卡片的行為一致
