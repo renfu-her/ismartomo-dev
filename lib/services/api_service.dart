@@ -93,11 +93,6 @@ class ApiService {
     }
   }
   
-  // 獲取熱門產品
-  Future<Map<String, dynamic>> getPopularProducts() async {
-    return _get('gws_appproducts_popular&limit=8');
-  }
-  
   // 獲取最新產品
   Future<Map<String, dynamic>> getLatestProducts() async {
     return _get('gws_appproducts_latest&limit=8');
@@ -106,6 +101,11 @@ class ApiService {
   // 獲取特價產品
   Future<Map<String, dynamic>> getSpecialProducts() async {
     return _get('gws_appproducts_special&limit=8');
+  }
+  
+  // 獲取熱銷產品
+  Future<Map<String, dynamic>> getBestsellerProducts() async {
+    return _get('gws_appproducts_bestseller&limit=8');
   }
   
   // 獲取首頁橫幅數據

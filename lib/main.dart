@@ -476,7 +476,8 @@ class _HomeContentState extends State<HomeContent> {
   
   // 產品數據
   List<dynamic> _latestProducts = [];
-  List<dynamic> _popularProducts = [];
+  List<dynamic> _specialProducts = [];
+  List<dynamic> _bestsellerProducts = [];
   
   @override
   void initState() {
@@ -495,12 +496,14 @@ class _HomeContentState extends State<HomeContent> {
       final results = await Future.wait([
         _apiService.getHomeBanners(),
         _apiService.getLatestProducts(),
-        _apiService.getPopularProducts(),
+        _apiService.getSpecialProducts(),
+        _apiService.getBestsellerProducts(),
       ]);
       
       final bannerResponse = results[0];
       final latestResponse = results[1];
-      final popularResponse = results[2];
+      final specialResponse = results[2];
+      final bestsellerResponse = results[3];
       
       setState(() {
         _isLoading = false;
@@ -517,11 +520,18 @@ class _HomeContentState extends State<HomeContent> {
           _latestProducts = latestResponse['products'];
         }
         
-        // 解析熱門產品數據
-        if (popularResponse.containsKey('popular_products')) {
-          _popularProducts = popularResponse['popular_products'];
-        } else if (popularResponse.containsKey('products')) {
-          _popularProducts = popularResponse['products'];
+        // 解析特價產品數據
+        if (specialResponse.containsKey('special_products')) {
+          _specialProducts = specialResponse['special_products'];
+        } else if (specialResponse.containsKey('products')) {
+          _specialProducts = specialResponse['products'];
+        }
+        
+        // 解析熱銷產品數據
+        if (bestsellerResponse.containsKey('bestseller_products')) {
+          _bestsellerProducts = bestsellerResponse['bestseller_products'];
+        } else if (bestsellerResponse.containsKey('products')) {
+          _bestsellerProducts = bestsellerResponse['products'];
         }
       });
     } catch (e) {
@@ -679,13 +689,13 @@ class _HomeContentState extends State<HomeContent> {
                     
                     const SizedBox(height: 16),
                     
-                    // 熱門產品
-                    if (_popularProducts.isNotEmpty) ...[
+                    // 特價產品
+                    if (_specialProducts.isNotEmpty) ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Center(
                           child: Text(
-                            '熱門產品',
+                            '特價產品',
                             style: TextStyle(
                               fontSize: TextSizeConfig.calculateTextSize(18),
                               fontWeight: FontWeight.bold,
@@ -704,9 +714,47 @@ class _HomeContentState extends State<HomeContent> {
                           crossAxisSpacing: 10.0,
                           mainAxisSpacing: 10.0,
                         ),
-                        itemCount: _popularProducts.length > 8 ? 8 : _popularProducts.length,
+                        itemCount: _specialProducts.length > 8 ? 8 : _specialProducts.length,
                         itemBuilder: (context, index) {
-                          final product = _popularProducts[index];
+                          final product = _specialProducts[index];
+                          return ProductCard(
+                            product: product,
+                            onTap: () => _showProductDetails(product),
+                          );
+                        },
+                      ),
+                    ],
+                    
+                    const SizedBox(height: 16),
+                    
+                    // 熱銷產品
+                    if (_bestsellerProducts.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Center(
+                          child: Text(
+                            '熱銷產品',
+                            style: TextStyle(
+                              fontSize: TextSizeConfig.calculateTextSize(18),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 0.65,
+                          crossAxisSpacing: 10.0,
+                          mainAxisSpacing: 10.0,
+                        ),
+                        itemCount: _bestsellerProducts.length > 8 ? 8 : _bestsellerProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = _bestsellerProducts[index];
                           return ProductCard(
                             product: product,
                             onTap: () => _showProductDetails(product),
@@ -738,7 +786,7 @@ class ProductListPageOld extends StatefulWidget {
   const ProductListPageOld({
     super.key, 
     required this.title,
-    this.initialEndpoint = 'popular',
+    this.initialEndpoint = 'bestseller',
   });
 
   final String title;
@@ -775,8 +823,8 @@ class _ProductListPageOldState extends State<ProductListPageOld> {
       
       // 根據當前選擇的端點獲取不同的產品數據
       switch (_currentEndpoint) {
-        case 'popular':
-          response = await _apiService.getPopularProducts();
+        case 'bestseller':
+          response = await _apiService.getBestsellerProducts();
           break;
         case 'latest':
           response = await _apiService.getLatestProducts();
@@ -785,7 +833,7 @@ class _ProductListPageOldState extends State<ProductListPageOld> {
           response = await _apiService.getSpecialProducts();
           break;
         default:
-          response = await _apiService.getPopularProducts();
+          response = await _apiService.getBestsellerProducts();
       }
 
       setState(() {
@@ -797,8 +845,8 @@ class _ProductListPageOldState extends State<ProductListPageOld> {
         }
         
         // 檢查各種可能的產品欄位
-        if (response.containsKey('popular_products')) {
-          _products = response['popular_products'];
+        if (response.containsKey('bestseller_products')) {
+          _products = response['bestseller_products'];
         } 
         else if (response.containsKey('latest_products')) {
           _products = response['latest_products'];
@@ -837,8 +885,8 @@ class _ProductListPageOldState extends State<ProductListPageOld> {
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'popular',
-                child: Text('熱門產品'),
+                value: 'bestseller',
+                child: Text('熱銷產品'),
               ),
               const PopupMenuItem(
                 value: 'latest',
