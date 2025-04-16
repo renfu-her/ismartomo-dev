@@ -533,6 +533,7 @@ class _HomeContentState extends State<HomeContent> {
         } else if (bestsellerResponse.containsKey('products')) {
           _bestsellerProducts = bestsellerResponse['products'];
         }
+
       });
     } catch (e) {
       setState(() {
