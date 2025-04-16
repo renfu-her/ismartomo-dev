@@ -1100,7 +1100,7 @@ class ProductCard extends StatelessWidget {
                                 // 如果有特價，顯示原價（加上橫線）和特價
                                 if (product['special'] != null && product['special'] != false)
                                   Text(
-                                    '${product['price']}',
+                                    _formatPriceString(product['price']),
                                     style: TextStyle(
                                       fontSize: TextSizeConfig.calculateTextSize(10),
                                       color: Colors.grey,
@@ -1112,8 +1112,8 @@ class ProductCard extends StatelessWidget {
                                 // 顯示價格（如果有特價則顯示特價，否則顯示原價）
                                 Text(
                                   product['special'] != null && product['special'] != false
-                                      ? '${product['special']}'
-                                      : '${product['price']}',
+                                      ? _formatPriceString(product['special'])
+                                      : _formatPriceString(product['price']),
                                   style: TextStyle(
                                     fontSize: TextSizeConfig.calculateTextSize(14),
                                     color: Colors.red,
@@ -1282,5 +1282,28 @@ class ProductCard extends StatelessWidget {
     String strippedText = _stripHtmlTags(name);
     // 再處理特殊字符
     return _formatSpecialCharacters(strippedText);
+  }
+
+  // 添加一個新的格式化價格字符串的函數
+  String _formatPriceString(dynamic price) {
+    if (price == null) return '\$0';
+    
+    String priceStr = price.toString().trim();
+    if (priceStr.isEmpty) return '\$0';
+    
+    // 如果已經包含 $ 符號，則直接返回
+    if (priceStr.contains('\$')) return priceStr;
+    
+    // 移除所有非數字和小數點的字符
+    String numericStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
+    
+    try {
+      double priceValue = double.parse(numericStr);
+      // 轉換為整數，不顯示小數點
+      return '\$${priceValue.toInt()}';
+    } catch (e) {
+      // 如果無法解析為數字，則直接添加 $ 符號
+      return '\$$priceStr';
+    }
   }
 }

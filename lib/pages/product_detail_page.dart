@@ -591,7 +591,7 @@ $productName
                                                   CrossAxisAlignment.start,
                                               children: [
                                                 Text(
-                                                  '${_productData['price']}',
+                                                  _formatPriceString(_productData['price']),
                                                   style: TextStyle(
                                                     fontSize: 14,
                                                     color: Colors.grey,
@@ -601,7 +601,7 @@ $productName
                                                   ),
                                                 ),
                                                 Text(
-                                                  '${_productData['special']}',
+                                                  _formatPriceString(_productData['special']),
                                                   style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -1210,10 +1210,7 @@ $productName
 
   String _formatPrice(double price) {
     double roundedPrice = (price * 100).round() / 100;
-    if (roundedPrice == roundedPrice.toInt()) {
-      return 'NT\$${roundedPrice.toInt()}';
-    }
-    return 'NT\$${roundedPrice.toStringAsFixed(2)}';
+    return '\$${roundedPrice.toInt()}';
   }
 
   String _formatSpecialCharacters(String text) {
@@ -1559,5 +1556,27 @@ $productName
             : 'https://ismartomo.com.tw/image/${_carouselImages[index]}';
       }
     });
+  }
+
+  String _formatPriceString(dynamic price) {
+    if (price == null) return '\$0';
+    
+    String priceStr = price.toString().trim();
+    if (priceStr.isEmpty) return '\$0';
+    
+    // 如果已經包含 $ 符號，則直接返回
+    if (priceStr.contains('\$')) return priceStr;
+    
+    // 移除所有非數字和小數點的字符
+    String numericStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
+    
+    try {
+      double priceValue = double.parse(numericStr);
+      // 轉換為整數，不顯示小數點
+      return '\$${priceValue.toInt()}';
+    } catch (e) {
+      // 如果無法解析為數字，則直接添加 $ 符號
+      return '\$$priceStr';
+    }
   }
 }
