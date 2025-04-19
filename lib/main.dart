@@ -22,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/search_page.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'services/cart_service.dart';
 
 // 全局 SharedPreferences 實例
 late SharedPreferences prefs;
@@ -86,9 +87,10 @@ void main() async {
   }
   
   runApp(
-    // 使用 ChangeNotifierProvider 提供 UserService 實例
-    ChangeNotifierProvider(
-      create: (context) => UserService(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartService()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -682,7 +684,7 @@ class _HomeContentState extends State<HomeContent> {
                           final product = _latestProducts[index];
                           return ProductCard(
                             product: product,
-                            onTap: () => _showProductDetails(product),
+                            onFavoritePressed: () => _showProductDetails(product),
                           );
                         },
                       ),
@@ -720,7 +722,7 @@ class _HomeContentState extends State<HomeContent> {
                           final product = _specialProducts[index];
                           return ProductCard(
                             product: product,
-                            onTap: () => _showProductDetails(product),
+                            onFavoritePressed: () => _showProductDetails(product),
                           );
                         },
                       ),
@@ -758,7 +760,7 @@ class _HomeContentState extends State<HomeContent> {
                           final product = _bestsellerProducts[index];
                           return ProductCard(
                             product: product,
-                            onTap: () => _showProductDetails(product),
+                            onFavoritePressed: () => _showProductDetails(product),
                           );
                         },
                       ),
@@ -775,9 +777,10 @@ class _HomeContentState extends State<HomeContent> {
   void _showProductDetails(Map<String, dynamic> product) async {
     if (product['product_id'] != null) {
       print('顯示產品詳情，產品ID: ${product['product_id']}');
-      Navigator.of(context).pushNamed(
-        '/product',
-        arguments: {'productDetails': product},
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(productDetails: product),
+        ),
       );
     }
   }
@@ -971,7 +974,7 @@ class _ProductListPageOldState extends State<ProductListPageOld> {
                   final product = _products[index];
                   return ProductCard(
                     product: product,
-                    onTap: () => _showProductDetails(product),
+                    onFavoritePressed: () => _showProductDetails(product),
                   );
                 },
               ),
@@ -985,9 +988,10 @@ class _ProductListPageOldState extends State<ProductListPageOld> {
   void _showProductDetails(Map<String, dynamic> product) async {
     if (product['product_id'] != null) {
       print('顯示產品詳情，產品ID: ${product['product_id']}');
-      Navigator.of(context).pushNamed(
-        '/product',
-        arguments: {'productDetails': product},
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ProductDetailPage(productDetails: product),
+        ),
       );
     }
   }
@@ -995,211 +999,170 @@ class _ProductListPageOldState extends State<ProductListPageOld> {
 
 class ProductCard extends StatelessWidget {
   final Map<String, dynamic> product;
-  final VoidCallback? onTap;
+  final VoidCallback? onFavoritePressed;
 
   const ProductCard({
-    super.key, 
-    required this.product, 
-    this.onTap,
-  });
+    Key? key,
+    required this.product,
+    this.onFavoritePressed,
+  }) : super(key: key);
+
+  String _formatPriceString(String? price) {
+    if (price == null || price.isEmpty) return '\$0';
+    // 移除所有非數字字符
+    String numericPrice = price.replaceAll(RegExp(r'[^\d]'), '');
+    if (numericPrice.isEmpty) return '\$0';
+    try {
+      // 轉換為整數並格式化
+      return '\$${int.parse(numericPrice)}';
+    } catch (e) {
+      return '\$0';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // 檢查產品價格是否為0或空字符串
-    bool isPriceZeroOrEmpty = false;
+    final isPriceZeroOrEmpty = product['price'] == null || 
+                              product['price'].toString().isEmpty || 
+                              product['price'].toString() == '0';
     
-    if (product['price'] != null) {
-      String priceStr = product['price'].toString().trim();
-      // 檢查是否為空字符串
-      if (priceStr.isEmpty) {
-        isPriceZeroOrEmpty = true;
-      } else {
-        // 移除貨幣符號和空格，轉換為數字
-        priceStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
-        try {
-          double price = double.parse(priceStr);
-          isPriceZeroOrEmpty = price == 0;
-        } catch (e) {
-          // 如果無法解析價格，檢查原始字符串是否為 "$0" 或類似形式
-          isPriceZeroOrEmpty = priceStr.contains('0') && !priceStr.contains(RegExp(r'[1-9]'));
-        }
-      }
-    } else {
-      // 如果價格為null，視為零價格
-      isPriceZeroOrEmpty = true;
-    }
+    final hasSpecialPrice = product['special'] != null && 
+                           product['special'] != false && 
+                           product['special'].toString().isNotEmpty;
 
-    return GestureDetector(
-      onTap: () {
-        if (onTap != null) {
-          onTap!();
-        } else if (product['product_id'] != null) {
-          // 導航到產品詳情頁面
-          Navigator.of(context).pushNamed(
-            '/product',
-            arguments: {'productDetails': product},
-          );
-        }
-      },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        elevation: 2.0,
-        color: Colors.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (product['thumb'] != null)
-              AspectRatio(
-                aspectRatio: 1.0,
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.white,
-                  child: Image.network(
-                    product['thumb'].startsWith('http') 
-                        ? product['thumb'] 
-                        : 'https://ismartomo.com.tw/image/${product['thumb']}',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
-                      );
-                    },
-                  ),
+    final isDisPriceOne = product['dis_price'] == 1;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2.0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (product['thumb'] != null)
+            AspectRatio(
+              aspectRatio: 1.0,
+              child: Container(
+                width: double.infinity,
+                color: Colors.white,
+                child: Image.network(
+                  product['thumb'].startsWith('http') 
+                      ? product['thumb'] 
+                      : 'https://ismartomo.com.tw/image/${product['thumb']}',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                    );
+                  },
                 ),
               ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatProductName(product['name'] ?? '未知產品'),
-                    style: TextStyle(
-                      fontSize: TextSizeConfig.calculateTextSize(12),
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatProductName(product['name'] ?? '未知產品'),
+                  style: TextStyle(
+                    fontSize: TextSizeConfig.calculateTextSize(12),
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 4),
-                  // 底部區域：價格、愛心、購物車分為三欄
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                if (!isDisPriceOne && !isPriceZeroOrEmpty) ...[
                   Row(
                     children: [
-                      // 價格佔據約60%的寬度 - 只有當價格不為零或空時才顯示
-                      Expanded(
-                        flex: 6, // 6/10 = 60%
-                        child: !isPriceZeroOrEmpty && product['price'] != null
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // 如果有特價，顯示原價（加上橫線）和特價
-                                if (product['special'] != null && product['special'] != false)
-                                  Text(
-                                    _formatPriceString(product['price']),
-                                    style: TextStyle(
-                                      fontSize: TextSizeConfig.calculateTextSize(10),
-                                      color: Colors.grey,
-                                      decoration: TextDecoration.lineThrough,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                // 顯示價格（如果有特價則顯示特價，否則顯示原價）
-                                Text(
-                                  product['special'] != null && product['special'] != false
-                                      ? _formatPriceString(product['special'])
-                                      : _formatPriceString(product['price']),
-                                  style: TextStyle(
-                                    fontSize: TextSizeConfig.calculateTextSize(14),
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            )
-                          : const SizedBox(),
-                      ),
-                      // 愛心按鈕 - 只有當價格不為零或空時才顯示
+                      if (hasSpecialPrice) ...[
+                        Text(
+                          _formatPriceString(product['price'].toString()),
+                          style: const TextStyle(
+                            decoration: TextDecoration.lineThrough,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _formatPriceString(product['special'].toString()),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ] else
+                        Text(
+                          _formatPriceString(product['price'].toString()),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       if (!isPriceZeroOrEmpty)
-                        Expanded(
-                          flex: 2, // 2/10 = 20%
-                          child: Consumer<UserService>(
-                            builder: (context, userService, child) {
-                              final productId = product['product_id'].toString();
-                              final isFavorite = userService.isLoggedIn && userService.isFavorite(productId);
-                              
-                              return IconButton(
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                                icon: FaIcon(
-                                  isFavorite ? FontAwesomeIcons.solidHeart : FontAwesomeIcons.heart,
-                                  size: 16,
-                                  color: Colors.red,
-                                ),
-                                onPressed: () {
-                                  if (!userService.isLoggedIn) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: const Text('請先登入以使用收藏功能'),
-                                        action: SnackBarAction(
-                                          label: '登入',
-                                          onPressed: () {
-                                            Navigator.of(context).pushNamed('/login');
-                                          },
-                                        ),
-                                      ),
-                                    );
-                                    return;
-                                  }
-                                  if (isFavorite) {
-                                    userService.removeFavorite(productId);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('已從收藏中移除')),
-                                    );
-                                  } else {
-                                    userService.addFavorite(productId);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('已加入收藏')),
-                                    );
-                                  }
-                                },
-                              );
-                            },
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.favorite_border),
+                          onPressed: onFavoritePressed,
                         ),
-                      // 根據價格顯示不同的圖標：價格為0顯示詳細資料圖標，否則顯示購物車圖標
-                      Expanded(
-                        flex: 2, // 2/10 = 20%
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: FaIcon(
-                            isPriceZeroOrEmpty ? FontAwesomeIcons.circleInfo : FontAwesomeIcons.cartShopping,
-                            size: 16,
-                          ),
-                          onPressed: () {
-                            // 導航到產品詳情頁面，與點擊產品卡片的行為一致
-                            Navigator.of(context).pushNamed(
-                              '/product',
-                              arguments: {'productDetails': product},
+                      ElevatedButton(
+                        onPressed: () {
+                          if (!isPriceZeroOrEmpty) {
+                            context.read<CartService>().addToCart(product);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('已加入購物車'),
+                                duration: Duration(seconds: 2),
+                              ),
                             );
-                          },
-                        ),
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ProductDetailPage(productDetails: product),
+                              ),
+                            );
+                          }
+                        },
+                        child: Text(isPriceZeroOrEmpty ? '查看詳情' : '加入購物車'),
+                      ),
+                    ],
+                  ),
+                ] else if (isDisPriceOne) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.favorite_border),
+                        onPressed: onFavoritePressed,
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailPage(productDetails: product),
+                            ),
+                          );
+                        },
+                        child: const Text('查看詳情'),
                       ),
                     ],
                   ),
                 ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1282,28 +1245,5 @@ class ProductCard extends StatelessWidget {
     String strippedText = _stripHtmlTags(name);
     // 再處理特殊字符
     return _formatSpecialCharacters(strippedText);
-  }
-
-  // 添加一個新的格式化價格字符串的函數
-  String _formatPriceString(dynamic price) {
-    if (price == null) return '\$0';
-    
-    String priceStr = price.toString().trim();
-    if (priceStr.isEmpty) return '\$0';
-    
-    // 如果已經包含 $ 符號，則直接返回
-    if (priceStr.contains('\$')) return priceStr;
-    
-    // 移除所有非數字和小數點的字符
-    String numericStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
-    
-    try {
-      double priceValue = double.parse(numericStr);
-      // 轉換為整數，不顯示小數點
-      return '\$${priceValue.toInt()}';
-    } catch (e) {
-      // 如果無法解析為數字，則直接添加 $ 符號
-      return '\$$priceStr';
-    }
   }
 }

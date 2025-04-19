@@ -754,18 +754,17 @@ $productName
                                 ),
                                 const SizedBox(height: 8),
 
-                                if (_productData.containsKey(
-                                      'description_json',
-                                    ) &&
-                                    _productData['description_json'] is List)
+                                if (_productData.containsKey('description_json') &&
+                                    _productData['description_json'] is List &&
+                                    _productData['description_json'].isNotEmpty)
                                   Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: _buildDescriptionFromJson(),
                                   )
-                                else if (_productData['description'] != null)
+                                else if (_productData['description'] != null &&
+                                    _productData['description'].toString().isNotEmpty)
                                   Html(
-                                    data: _productData['description'],
+                                    data: _productData['description'].toString(),
                                     style: {
                                       "body": Style(
                                         margin: Margins.zero,
@@ -775,6 +774,14 @@ $productName
                                         margin: Margins(bottom: Margin(8)),
                                       ),
                                     },
+                                  )
+                                else
+                                  const Text(
+                                    '暫無描述',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
                                   ),
                               ],
                             ),
