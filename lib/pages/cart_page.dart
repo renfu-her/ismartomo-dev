@@ -441,10 +441,9 @@ class _CartPageState extends State<CartPage> {
   }
 
   Widget _buildCartItem(dynamic item) {
-    final int quantity = int.tryParse(item['quantity'].toString()) ?? 1;
-    
     // 解析選項
     final List<Map<String, String>> options = _parseCartItemOptions(item);
+    final int quantity = int.tryParse(item['quantity'].toString()) ?? 1;
     
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -455,7 +454,6 @@ class _CartPageState extends State<CartPage> {
       ),
       child: InkWell(
         onTap: () {
-          // 跳轉到產品詳情頁面
           Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => ProductDetailPage(
@@ -465,7 +463,7 @@ class _CartPageState extends State<CartPage> {
                   'thumb': item['thumb'],
                   'price': item['price'],
                   'quantity': item['quantity'],
-                  'options': item['option'],
+                  'options': options,
                 },
               ),
             ),
@@ -502,7 +500,7 @@ class _CartPageState extends State<CartPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 商品名稱 - 使用HTML實體轉換
+                    // 商品名稱
                     Text(
                       _decodeHtmlEntities(item['name'] ?? '未知商品'),
                       style: const TextStyle(
@@ -526,35 +524,39 @@ class _CartPageState extends State<CartPage> {
                     
                     const SizedBox(height: 8),
                     
-                    // 產品選項 - 顯示在單價上方
+                    // 產品選項
                     if (options.isNotEmpty) ...[
-                      ...options.map((option) => Container(
-                        margin: const EdgeInsets.only(bottom: 4.0),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${option['name']}: ',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[800],
-                              ),
-                            ),
-                            Expanded(
-                              child: Text(
-                                option['value'] ?? '',
+                      ...options.map((option) {
+                        String displayValue = option['value'] ?? '';
+                        String optionName = option['name'] ?? '';
+                        
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 4.0),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$optionName: ',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[800],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )).toList(),
+                              Expanded(
+                                child: Text(
+                                  displayValue,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                       
-                      // 如果有選項，添加一個分隔線
                       Divider(color: Colors.grey[200], height: 16),
                     ],
                     
@@ -701,171 +703,151 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
-  // 輔助方法：將HTML實體轉換為實際字符
+  // HTML實體解碼
   String _decodeHtmlEntities(String text) {
-    if (text.isEmpty) {
-      return '';
-    }
     return text
-        .replaceAll('&quot;', '"')
-        .replaceAll('&amp;', '&')
-        .replaceAll('&lt;', '<')
-        .replaceAll('&gt;', '>')
-        .replaceAll('&apos;', "'")
-        .replaceAll('&#039;', "'")
-        .replaceAll('&#39;', "'")
-        .replaceAll('&nbsp;', ' ')
-        .replaceAll('&copy;', '©')
-        .replaceAll('&reg;', '®')
-        .replaceAll('&trade;', '™');
+      .replaceAll('&amp;', '&')
+      .replaceAll('&lt;', '<')
+      .replaceAll('&gt;', '>')
+      .replaceAll('&quot;', '"')
+      .replaceAll('&#039;', "'")
+      .replaceAll('&nbsp;', ' ');
   }
   
   // 解析購物車項目中的選項數據
   List<Map<String, String>> _parseCartItemOptions(dynamic item) {
-    List<Map<String, String>> parsedOptions = [];
+    List<Map<String, String>> options = [];
     
-    // 優先使用 optiondata 欄位，如果存在
-    if (item.containsKey('optiondata') && item['optiondata'] is List) {
-      final List<dynamic> optionDataList = item['optiondata'];
-      debugPrint('使用 optiondata 欄位，選項數量: ${optionDataList.length}');
-      
-      for (var option in optionDataList) {
-        if (option is Map && option.containsKey('name') && option.containsKey('value')) {
-          parsedOptions.add({
-            'name': _decodeHtmlEntities(option['name'] ?? ''),
-            'value': _decodeHtmlEntities(option['value'] ?? ''),
-            'option_id': option['product_option_id']?.toString() ?? '',
-            'value_id': option['product_option_value_id']?.toString() ?? ''
-          });
-        }
-      }
-      
-      // 如果成功解析了選項，直接返回
-      if (parsedOptions.isNotEmpty) {
-        debugPrint('從 optiondata 成功解析選項: $parsedOptions');
-        return parsedOptions;
-      }
-    }
-    
-    // 如果 optiondata 為空或解析失敗，嘗試使用 option 欄位
-    if (item.containsKey('option')) {
-      try {
-        debugPrint('嘗試從 option 欄位解析選項，產品ID: ${item['product_id']}，選項數據: ${item['option']}');
+    try {
+      // 檢查optiondata字段
+      if (item['optiondata'] != null && item['optiondata'] is List) {
+        List<dynamic> optionDataList = item['optiondata'];
         
-        // 處理不同格式的選項數據
-        if (item['option'] is String) {
-          final String optionStr = item['option'];
+        for (var optionData in optionDataList) {
+          String optionId = optionData['product_option_id']?.toString() ?? '';
+          String valueId = optionData['product_option_value_id']?.toString() ?? '';
+          String productId = item['product_id']?.toString() ?? '';
           
-          // 檢查是否為空選項
-          if (optionStr == "[]" || optionStr.isEmpty) {
-            debugPrint('選項為空，返回空列表');
-            return parsedOptions;
-          }
-          
-          // 解析選項JSON
-          final Map<String, dynamic> optionsMap = json.decode(optionStr);
-          debugPrint('解析後的選項映射: $optionsMap');
-          return _processOptionsMap(item['product_id']?.toString() ?? '', optionsMap);
-        } 
-        // 處理已經是列表的選項
-        else if (item['option'] is List) {
-          final List<dynamic> optionsList = item['option'];
-          debugPrint('選項是列表格式: $optionsList');
-          
-          // 直接返回選項列表
-          for (var option in optionsList) {
-            if (option is Map && option.containsKey('name') && option.containsKey('value')) {
-              parsedOptions.add({
-                'name': _decodeHtmlEntities(option['name'] ?? ''),
-                'value': _decodeHtmlEntities(option['value'] ?? '')
-              });
-            }
-          }
-          
-          return parsedOptions;
-        }
-        // 處理已經是Map的選項
-        else if (item['option'] is Map) {
-          final Map<String, dynamic> optionsMap = Map<String, dynamic>.from(item['option']);
-          debugPrint('選項是映射格式: $optionsMap');
-          return _processOptionsMap(item['product_id']?.toString() ?? '', optionsMap);
-        }
-      } catch (e) {
-        debugPrint('解析選項失敗: ${e.toString()}');
-      }
-    }
-    
-    return parsedOptions;
-  }
-  
-  // 處理選項映射
-  List<Map<String, String>> _processOptionsMap(String productId, Map<String, dynamic> optionsMap) {
-    List<Map<String, String>> parsedOptions = [];
-    
-    debugPrint('處理選項映射，產品ID: $productId，選項映射: $optionsMap');
-    
-    // 獲取產品詳情以獲取選項名稱
-    if (productId.isNotEmpty && _productOptionsCache.containsKey(productId)) {
-      final productData = _productOptionsCache[productId];
-      debugPrint('找到產品緩存數據: ${productData != null}');
-      
-      // 檢查產品數據中是否包含選項
-      if (productData != null && productData.containsKey('options') && productData['options'] is List) {
-        final List<dynamic> productOptions = productData['options'];
-        debugPrint('產品選項數量: ${productOptions.length}');
-        
-        // 遍歷選項映射
-        optionsMap.forEach((optionId, valueId) {
-          debugPrint('處理選項 ID: $optionId，值 ID: $valueId');
-          
-          // 在產品選項中查找匹配的選項
-          for (var option in productOptions) {
-            if (option['product_option_id'].toString() == optionId) {
-              String optionName = _decodeHtmlEntities(option['name'] ?? '');
-              String valueName = '';
-              
-              debugPrint('找到匹配的選項: $optionName (ID: $optionId)');
-              
-              // 在選項值中查找匹配的值
-              if (option.containsKey('product_option_value') && option['product_option_value'] is List) {
-                final List<dynamic> optionValues = option['product_option_value'];
-                debugPrint('選項值數量: ${optionValues.length}');
-                
-                for (var value in optionValues) {
-                  if (value['product_option_value_id'].toString() == valueId.toString()) {
-                    valueName = _decodeHtmlEntities(value['name'] ?? '');
-                    debugPrint('找到匹配的選項值: $valueName (ID: $valueId)');
+          if (optionId.isNotEmpty && valueId.isNotEmpty && productId.isNotEmpty) {
+            // 從產品選項快取中查找選項信息
+            if (_productOptionsCache.containsKey(productId)) {
+              var productData = _productOptionsCache[productId]!;
+              if (productData.containsKey('options') && productData['options'] is List) {
+                for (var option in productData['options']) {
+                  if (option['product_option_id'].toString() == optionId) {
+                    // 查找選項值
+                    if (option['product_option_value'] is List) {
+                      for (var value in option['product_option_value']) {
+                        if (value['product_option_value_id'].toString() == valueId) {
+                          options.add({
+                            'name': _decodeHtmlEntities(option['name'] ?? ''),
+                            'value': _decodeHtmlEntities(value['name'] ?? ''),
+                            'option_id': optionId,
+                            'value_id': valueId
+                          });
+                          break;
+                        }
+                      }
+                    }
                     break;
                   }
                 }
               }
-              
-              // 如果找到了選項名稱和值，添加到解析結果中
-              if (optionName.isNotEmpty && valueName.isNotEmpty) {
-                debugPrint('添加解析結果: $optionName: $valueName');
-                parsedOptions.add({
-                  'name': optionName,
-                  'value': valueName,
-                  'option_id': optionId,
-                  'value_id': valueId.toString()
-                });
-              } else {
-                debugPrint('未找到完整的選項名稱和值');
+            }
+          }
+        }
+      }
+      
+      // 如果optiondata為空，嘗試解析option字段
+      if (options.isEmpty && item['option'] != null) {
+        Map<String, dynamic> optionsMap;
+        if (item['option'] is String) {
+          optionsMap = json.decode(item['option']);
+        } else if (item['option'] is Map) {
+          optionsMap = Map<String, dynamic>.from(item['option']);
+        } else {
+          return options;
+        }
+        
+        String productId = item['product_id']?.toString() ?? '';
+        if (productId.isNotEmpty && _productOptionsCache.containsKey(productId)) {
+          var productData = _productOptionsCache[productId]!;
+          
+          optionsMap.forEach((optionId, valueId) {
+            if (productData.containsKey('options') && productData['options'] is List) {
+              for (var option in productData['options']) {
+                if (option['product_option_id'].toString() == optionId) {
+                  if (option['product_option_value'] is List) {
+                    for (var value in option['product_option_value']) {
+                      if (value['product_option_value_id'].toString() == valueId.toString()) {
+                        options.add({
+                          'name': _decodeHtmlEntities(option['name'] ?? ''),
+                          'value': _decodeHtmlEntities(value['name'] ?? ''),
+                          'option_id': optionId,
+                          'value_id': valueId.toString()
+                        });
+                        break;
+                      }
+                    }
+                  }
+                  break;
+                }
               }
-              
+            }
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('解析購物車選項時出錯: $e');
+    }
+    
+    debugPrint('解析到的選項: $options');
+    return options;
+  }
+
+  // 處理選項映射
+  List<Map<String, String>> _processOptionsMap(Map<String, dynamic> optionsMap, String productId) {
+    List<Map<String, String>> options = [];
+    
+    if (_productOptionsCache.containsKey(productId)) {
+      var productData = _productOptionsCache[productId]!;
+      
+      optionsMap.forEach((optionId, valueId) {
+        if (productData.containsKey('options') && productData['options'] is List) {
+          for (var option in productData['options']) {
+            if (option['product_option_id'].toString() == optionId) {
+              if (option['product_option_value'] is List) {
+                for (var value in option['product_option_value']) {
+                  if (value['product_option_value_id'].toString() == valueId.toString()) {
+                    options.add({
+                      'name': _decodeHtmlEntities(option['name'] ?? ''),
+                      'value': _decodeHtmlEntities(value['name'] ?? ''),
+                      'option_id': optionId,
+                      'value_id': valueId.toString()
+                    });
+                    break;
+                  }
+                }
+              }
               break;
             }
           }
-        });
-      } else {
-        debugPrint('產品數據中沒有選項信息');
-      }
-    } else {
-      debugPrint('產品ID為空或未找到產品緩存數據');
+        }
+      });
     }
     
-    debugPrint('解析結果: $parsedOptions');
-    return parsedOptions;
+    return options;
+  }
+
+  void _proceedToCheckout() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CheckoutPage(),
+      ),
+    ).then((_) {
+      // 從結帳頁面返回後刷新購物車數據
+      _fetchCartData();
+    });
   }
 
   // 測試選項解析功能
@@ -919,7 +901,7 @@ class _CartPageState extends State<CartPage> {
       _productOptionsCache['3505'] = mockProductData;
       
       // 測試處理選項映射
-      final List<Map<String, String>> parsedOptions = _processOptionsMap('3505', optionsMap);
+      final List<Map<String, String>> parsedOptions = _processOptionsMap(optionsMap, '3505');
       
       debugPrint('解析結果: $parsedOptions');
       
@@ -1078,16 +1060,5 @@ class _CartPageState extends State<CartPage> {
     });
     
     return parsedOptions;
-  }
-
-  void _proceedToCheckout() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const CheckoutPage(),
-      ),
-    ).then((_) {
-      // 從結帳頁面返回後刷新購物車數據
-      _fetchCartData();
-    });
   }
 } 
