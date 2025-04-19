@@ -129,12 +129,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       for (var option in _productData['options']) {
         if (option['product_option_value'] is List &&
             option['product_option_value'].isNotEmpty) {
-          _selectedOptions[option['name']] =
-              option['product_option_value'][0]['product_option_value_id'];
+          // 不設置預設值，讓用戶自己選擇
+          // _selectedOptions[option['product_option_id']] =
+          //     option['product_option_value'][0]['product_option_value_id'];
         }
       }
 
-      _calculateFinalPrice();
+      // 初始價格為基礎價格，不包含選項調整
+      _finalPrice = _basePrice;
     }
   }
 
@@ -146,7 +148,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       for (var option in _productData['options']) {
         if (option['product_option_value'] is List) {
           for (var value in option['product_option_value']) {
-            if (_selectedOptions[option['name']] ==
+            if (_selectedOptions[option['product_option_id']] ==
                 value['product_option_value_id']) {
               _applyPriceAdjustment(value);
               break;
@@ -907,7 +909,8 @@ $productName
                     )
                   : null,
               label: Text(optionText),
-              selected: _selectedOptions[option['product_option_id']] ==
+              selected: _selectedOptions.containsKey(option['product_option_id']) &&
+                  _selectedOptions[option['product_option_id']] ==
                   value['product_option_value_id'],
               onSelected: (isSelected) {
                 if (isSelected) {
@@ -1018,7 +1021,8 @@ $productName
                     )
                   : null,
               label: Text(optionText),
-              selected: _selectedOptions[option['product_option_id']] ==
+              selected: _selectedOptions.containsKey(option['product_option_id']) &&
+                  _selectedOptions[option['product_option_id']] ==
                   value['product_option_value_id'],
               onSelected: (isSelected) {
                 if (isSelected) {
@@ -1278,8 +1282,8 @@ $productName
     String selectedName = '';
     String selectedImage = '';
     for (var value in optionValues) {
-      if (value['product_option_value_id'] ==
-          _selectedOptions[option['product_option_id']]) {
+      if (_selectedOptions.containsKey(option['product_option_id']) &&
+          _selectedOptions[option['product_option_id']] == value['product_option_value_id']) {
         selectedName = value['name']?.toString().trim().isNotEmpty == true
             ? value['name']
             : value['disname'] ?? '';
