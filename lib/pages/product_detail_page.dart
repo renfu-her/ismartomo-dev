@@ -28,6 +28,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   double _basePrice = 0.0;
   double _finalPrice = 0.0;
   bool _isPriceZero = false;
+  bool _isPriceDisabled = false;
   bool _isFavorite = false;
   String _currentImage = '';
   int _currentImageIndex = 0;
@@ -57,7 +58,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           if (_carouselImages.isNotEmpty) {
             _currentImage = _carouselImages[0].startsWith('http')
                 ? _carouselImages[0]
-                : 'https://ismartomo.com.tw/image/${_carouselImages[0]}';
+                : 'https://ismartdemo.com.tw/image/${_carouselImages[0]}';
           }
         });
 
@@ -77,7 +78,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               if (_carouselImages.isNotEmpty) {
                 _currentImage = _carouselImages[0].startsWith('http')
                     ? _carouselImages[0]
-                    : 'https://ismartomo.com.tw/image/${_carouselImages[0]}';
+                    : 'https://ismartdemo.com.tw/image/${_carouselImages[0]}';
               }
               _initializeOptions();
             });
@@ -120,6 +121,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       _finalPrice = 0.0;
       _isPriceZero = true;
     }
+    
+    if (_productData['dis_price'] != null) {
+      _isPriceDisabled = _productData['dis_price'] == "1";
+    }
   }
 
   void _initializeOptions() {
@@ -129,69 +134,49 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       for (var option in _productData['options']) {
         if (option['product_option_value'] is List &&
             option['product_option_value'].isNotEmpty) {
-          // 不設置預設值，讓用戶自己選擇
-          // _selectedOptions[option['product_option_id']] =
-          //     option['product_option_value'][0]['product_option_value_id'];
+          _selectedOptions[option['name']] =
+              option['product_option_value'][0]['product_option_value_id'];
         }
       }
 
-      // 初始價格為基礎價格，不包含選項調整
-      _finalPrice = _basePrice;
+      _calculateFinalPrice();
     }
   }
 
   void _calculateFinalPrice() {
     _finalPrice = _basePrice;
+    double totalAdjustment = 0.0;
 
-    if (_productData.containsKey('options') &&
-        _productData['options'] is List) {
+    if (_productData.containsKey('options') && _productData['options'] is List) {
       for (var option in _productData['options']) {
         if (option['product_option_value'] is List) {
           for (var value in option['product_option_value']) {
-            if (_selectedOptions[option['product_option_id']] ==
-                value['product_option_value_id']) {
-              _applyPriceAdjustment(value);
-              break;
+            if (_selectedOptions[option['product_option_id']] == value['product_option_value_id']) {
+              String priceStr = value['cal_price']?.toString() ?? value['price']?.toString() ?? '0';
+              priceStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
+              double adjustmentPrice = double.tryParse(priceStr) ?? 0.0;
+              String pricePrefix = value['cal_price_prefix'] ?? value['price_prefix'] ?? '+';
+              
+              switch (pricePrefix) {
+                case '+':
+                  totalAdjustment += adjustmentPrice;
+                  break;
+                case '-':
+                  totalAdjustment -= adjustmentPrice;
+                  break;
+                case '=':
+                  _finalPrice = adjustmentPrice;
+                  return;
+              }
             }
           }
         }
       }
     }
 
+    _finalPrice += totalAdjustment;
     if (_finalPrice < 0) {
       _finalPrice = 0;
-    }
-  }
-
-  void _applyPriceAdjustment(Map<String, dynamic> optionValue) {
-    if (optionValue.containsKey('price') &&
-        optionValue.containsKey('price_prefix')) {
-      String priceStr = optionValue['price'].toString().replaceAll(
-        RegExp(r'[^\d.]'),
-        '',
-      );
-      double optionPrice = 0.0;
-
-      try {
-        optionPrice = double.parse(priceStr);
-      } catch (e) {
-        print('選項價格轉換錯誤: $e');
-        return;
-      }
-
-      String prefix = optionValue['price_prefix'];
-
-      switch (prefix) {
-        case '+':
-          _finalPrice += optionPrice;
-          break;
-        case '-':
-          _finalPrice -= optionPrice;
-          break;
-        case '=':
-          _finalPrice = optionPrice;
-          break;
-      }
     }
   }
 
@@ -411,7 +396,7 @@ $productName
       appBar: AppBar(
         title: const Text('產品明細'),
         actions: [
-          if (!_isPriceZero)
+          if (!_isPriceZero && !_isPriceDisabled)
             Consumer<UserService>(
               builder: (context, userService, child) {
                 _isFavorite = userService.isLoggedIn && userService.isFavorite(
@@ -511,7 +496,7 @@ $productName
                                             child: Image.network(
                                               image.startsWith('http')
                                                   ? image
-                                                  : 'https://ismartomo.com.tw/image/$image',
+                                                  : 'https://ismartdemo.com.tw/image/$image',
                                               fit: BoxFit.contain,
                                               errorBuilder: (context, error, stackTrace) {
                                                 return const Center(
@@ -573,7 +558,7 @@ $productName
                                     ),
                                     const SizedBox(height: 16),
 
-                                    if (!_isPriceZero)
+                                    if (!_isPriceZero && !_isPriceDisabled)
                                       Row(
                                         children: [
                                           Text(
@@ -670,7 +655,7 @@ $productName
 
                                 const SizedBox(height: 24),
 
-                                if (!isOutOfStock && !_isPriceZero)
+                                if (!isOutOfStock && !_isPriceZero && !_isPriceDisabled)
                                   Row(
                                     children: [
                                       const Text(
@@ -754,17 +739,18 @@ $productName
                                 ),
                                 const SizedBox(height: 8),
 
-                                if (_productData.containsKey('description_json') &&
-                                    _productData['description_json'] is List &&
-                                    _productData['description_json'].isNotEmpty)
+                                if (_productData.containsKey(
+                                      'description_json',
+                                    ) &&
+                                    _productData['description_json'] is List)
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: _buildDescriptionFromJson(),
                                   )
-                                else if (_productData['description'] != null &&
-                                    _productData['description'].toString().isNotEmpty)
+                                else if (_productData['description'] != null)
                                   Html(
-                                    data: _productData['description'].toString(),
+                                    data: _productData['description'],
                                     style: {
                                       "body": Style(
                                         margin: Margins.zero,
@@ -774,14 +760,6 @@ $productName
                                         margin: Margins(bottom: Margin(8)),
                                       ),
                                     },
-                                  )
-                                else
-                                  const Text(
-                                    '暫無描述',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey,
-                                    ),
                                   ),
                               ],
                             ),
@@ -791,7 +769,7 @@ $productName
                     ),
                   ),
 
-                  if (!_isPriceZero)
+                  if (!_isPriceZero && !_isPriceDisabled)
                     Container(
                       color: Colors.white,
                       child: SafeArea(
@@ -902,7 +880,7 @@ $productName
                   ? Image.network(
                       imageUrl.startsWith('http')
                           ? imageUrl
-                          : 'https://ismartomo.com.tw/image/$imageUrl',
+                          : 'https://ismartdemo.com.tw/image/$imageUrl',
                       width: 24,
                       height: 24,
                       fit: BoxFit.cover,
@@ -916,8 +894,7 @@ $productName
                     )
                   : null,
               label: Text(optionText),
-              selected: _selectedOptions.containsKey(option['product_option_id']) &&
-                  _selectedOptions[option['product_option_id']] ==
+              selected: _selectedOptions[option['product_option_id']] ==
                   value['product_option_value_id'],
               onSelected: (isSelected) {
                 if (isSelected) {
@@ -954,7 +931,7 @@ $productName
                       : selectedValue['disname'] ?? '';
                   String imageUrl = selectedValue['image'] ?? '';
                   if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-                    imageUrl = 'https://ismartomo.com.tw/image/$imageUrl';
+                    imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
                   }
 
                   return Row(
@@ -1014,7 +991,7 @@ $productName
                   ? Image.network(
                       imageUrl.startsWith('http')
                           ? imageUrl
-                          : 'https://ismartomo.com.tw/image/$imageUrl',
+                          : 'https://ismartdemo.com.tw/image/$imageUrl',
                       width: 24,
                       height: 24,
                       fit: BoxFit.cover,
@@ -1028,8 +1005,7 @@ $productName
                     )
                   : null,
               label: Text(optionText),
-              selected: _selectedOptions.containsKey(option['product_option_id']) &&
-                  _selectedOptions[option['product_option_id']] ==
+              selected: _selectedOptions[option['product_option_id']] ==
                   value['product_option_value_id'],
               onSelected: (isSelected) {
                 if (isSelected) {
@@ -1064,7 +1040,7 @@ $productName
                       : selectedValue['disname'] ?? '';
                   String imageUrl = selectedValue['image'] ?? '';
                   if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-                    imageUrl = 'https://ismartomo.com.tw/image/$imageUrl';
+                    imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
                   }
 
                   return Row(
@@ -1220,8 +1196,20 @@ $productName
   }
 
   String _formatPrice(double price) {
-    double roundedPrice = (price * 100).round() / 100;
-    return '\$${roundedPrice.toInt()}';
+    return '\$${price.round()}';
+  }
+
+  String _formatPriceString(String? price) {
+    if (price == null || price.isEmpty) return '';
+    
+    String numericPrice = price.replaceAll(RegExp(r'[^\d.]'), '');
+    
+    try {
+      int priceValue = double.parse(numericPrice).round();
+      return '\$$priceValue';
+    } catch (e) {
+      return '\$$price';
+    }
   }
 
   String _formatSpecialCharacters(String text) {
@@ -1289,8 +1277,8 @@ $productName
     String selectedName = '';
     String selectedImage = '';
     for (var value in optionValues) {
-      if (_selectedOptions.containsKey(option['product_option_id']) &&
-          _selectedOptions[option['product_option_id']] == value['product_option_value_id']) {
+      if (value['product_option_value_id'] ==
+          _selectedOptions[option['product_option_id']]) {
         selectedName = value['name']?.toString().trim().isNotEmpty == true
             ? value['name']
             : value['disname'] ?? '';
@@ -1335,7 +1323,7 @@ $productName
                         child: Image.network(
                           imageUrl.startsWith('http')
                               ? imageUrl
-                              : 'https://ismartomo.com.tw/image/$imageUrl',
+                              : 'https://ismartdemo.com.tw/image/$imageUrl',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
@@ -1387,7 +1375,7 @@ $productName
                     child: Image.network(
                       selectedImage.startsWith('http')
                           ? selectedImage
-                          : 'https://ismartomo.com.tw/image/$selectedImage',
+                          : 'https://ismartdemo.com.tw/image/$selectedImage',
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(
@@ -1546,7 +1534,7 @@ $productName
       setState(() {
         String fullImageUrl = newImage.startsWith('http')
             ? newImage
-            : 'https://ismartomo.com.tw/image/$newImage';
+            : 'https://ismartdemo.com.tw/image/$newImage';
         
         _currentImage = fullImageUrl;
         
@@ -1564,30 +1552,8 @@ $productName
       if (index < _carouselImages.length) {
         _currentImage = _carouselImages[index].startsWith('http')
             ? _carouselImages[index]
-            : 'https://ismartomo.com.tw/image/${_carouselImages[index]}';
+            : 'https://ismartdemo.com.tw/image/${_carouselImages[index]}';
       }
     });
-  }
-
-  String _formatPriceString(dynamic price) {
-    if (price == null) return '\$0';
-    
-    String priceStr = price.toString().trim();
-    if (priceStr.isEmpty) return '\$0';
-    
-    // 如果已經包含 $ 符號，則直接返回
-    if (priceStr.contains('\$')) return priceStr;
-    
-    // 移除所有非數字和小數點的字符
-    String numericStr = priceStr.replaceAll(RegExp(r'[^\d.]'), '');
-    
-    try {
-      double priceValue = double.parse(numericStr);
-      // 轉換為整數，不顯示小數點
-      return '\$${priceValue.toInt()}';
-    } catch (e) {
-      // 如果無法解析為數字，則直接添加 $ 符號
-      return '\$$priceStr';
-    }
   }
 }

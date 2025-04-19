@@ -941,30 +941,20 @@ class _CheckoutPageState extends State<CheckoutPage> {
     // 解析選項
     List<Map<String, String>> options = [];
     
-    // 使用 optiondata 欄位
+    // 只使用 optiondata 欄位，忽略 option 欄位
     if (item.containsKey('optiondata') && item['optiondata'] is List) {
       final List<dynamic> optionDataList = item['optiondata'];
       
       for (var option in optionDataList) {
-        if (option is Map) {
-          // 獲取選項詳細信息
-          _fetchOptionDetails(
-            item['product_id'].toString(),
-            option['product_option_id'].toString(),
-            option['product_option_value_id'].toString(),
-          ).then((optionDetails) {
-            if (optionDetails != null) {
-              setState(() {
-                options.add({
-                  'name': _decodeHtmlEntities(optionDetails['option_name'] ?? ''),
-                  'value': _decodeHtmlEntities(optionDetails['value_name'] ?? '')
-                });
-              });
-            }
+        if (option is Map && option.containsKey('name') && option.containsKey('value')) {
+          options.add({
+            'name': _decodeHtmlEntities(option['name'] ?? ''),
+            'value': _decodeHtmlEntities(option['value'] ?? '')
           });
         }
       }
     }
+    // 移除對 option 欄位的處理
     
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -1092,47 +1082,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
         ],
       ),
     );
-  }
-  
-  // 添加獲取選項詳細信息的方法
-  Future<Map<String, String>?> _fetchOptionDetails(
-    String productId,
-    String optionId,
-    String valueId,
-  ) async {
-    try {
-      final response = await _apiService.getProductDetails(productId);
-      
-      if (response.containsKey('product') &&
-          response['product'] is List &&
-          response['product'].isNotEmpty) {
-        
-        final product = response['product'][0];
-        
-        if (product.containsKey('options') && product['options'] is List) {
-          for (var option in product['options']) {
-            if (option['product_option_id'].toString() == optionId) {
-              final optionName = option['disname'] ?? option['name'] ?? '';
-              
-              if (option['product_option_value'] is List) {
-                for (var value in option['product_option_value']) {
-                  if (value['product_option_value_id'].toString() == valueId) {
-                    final valueName = value['disname'] ?? value['name'] ?? '';
-                    return {
-                      'option_name': optionName,
-                      'value_name': valueName,
-                    };
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch (e) {
-      print('獲取選項詳細信息失敗: ${e.toString()}');
-    }
-    return null;
   }
   
   double _calculateShippingFee() {
