@@ -277,7 +277,7 @@ class _HomePageState extends State<HomePage> {
             ? Image.network(
                 _logoUrl!.startsWith('http') 
                     ? _logoUrl! 
-                    : 'https://ismartdemo.com.tw/image/${_logoUrl!}',
+                    : 'https://ismartomo.com.tw/image/${_logoUrl!}',
                 height: 40,
                 errorBuilder: (context, error, stackTrace) {
                   return const Text('商城首頁');
