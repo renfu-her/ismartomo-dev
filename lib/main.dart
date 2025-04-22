@@ -660,7 +660,7 @@ class _HomeContentState extends State<HomeContent> {
                                 child: Stack(
                                   children: [
                                     Image.network(
-                                      banner['image'],
+                                      getFullImageUrl(banner['image']),
                                       fit: BoxFit.cover,
                                       width: double.infinity,
                                       height: double.infinity,
@@ -1173,9 +1173,7 @@ class ProductCard extends StatelessWidget {
                   width: double.infinity,
                   color: Colors.white,
                   child: Image.network(
-                    product['thumb'].startsWith('http') 
-                        ? product['thumb'] 
-                        : 'https://ismartdemo.com.tw/image/${product['thumb']}',
+                    getFullImageUrl(product['thumb']),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
                       return const Center(
@@ -1396,4 +1394,11 @@ class ProductCard extends StatelessWidget {
     // 再處理特殊字符
     return _formatSpecialCharacters(strippedText);
   }
+}
+
+// 圖片網址處理輔助函數
+String getFullImageUrl(String? url) {
+  if (url == null || url.isEmpty) return '';
+  if (url.startsWith('http')) return url;
+  return 'https://ismartomo.com.tw/image/$url';
 }

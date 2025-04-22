@@ -56,9 +56,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           _initializePrice();
           _carouselImages = _getAllProductImages();
           if (_carouselImages.isNotEmpty) {
-            _currentImage = _carouselImages[0].startsWith('http')
-                ? _carouselImages[0]
-                : 'https://ismartdemo.com.tw/image/${_carouselImages[0]}';
+            _currentImage = _carouselImages[0];
           }
         });
 
@@ -76,9 +74,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               _initializePrice();
               _carouselImages = _getAllProductImages();
               if (_carouselImages.isNotEmpty) {
-                _currentImage = _carouselImages[0].startsWith('http')
-                    ? _carouselImages[0]
-                    : 'https://ismartdemo.com.tw/image/${_carouselImages[0]}';
+                _currentImage = _carouselImages[0];
               }
               _initializeOptions();
             });
@@ -494,9 +490,7 @@ $productName
                                             width: double.infinity,
                                             margin: const EdgeInsets.symmetric(horizontal: 5.0),
                                             child: Image.network(
-                                              image.startsWith('http')
-                                                  ? image
-                                                  : 'https://ismartdemo.com.tw/image/$image',
+                                              getFullImageUrl(image),
                                               fit: BoxFit.contain,
                                               errorBuilder: (context, error, stackTrace) {
                                                 return const Center(
@@ -878,9 +872,7 @@ $productName
             return ChoiceChip(
               avatar: imageUrl.isNotEmpty
                   ? Image.network(
-                      imageUrl.startsWith('http')
-                          ? imageUrl
-                          : 'https://ismartdemo.com.tw/image/$imageUrl',
+                      getFullImageUrl(imageUrl),
                       width: 24,
                       height: 24,
                       fit: BoxFit.cover,
@@ -931,7 +923,7 @@ $productName
                       : selectedValue['disname'] ?? '';
                   String imageUrl = selectedValue['image'] ?? '';
                   if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-                    imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
+                    imageUrl = 'https://ismartomo.com.tw/image/$imageUrl';
                   }
 
                   return Row(
@@ -942,7 +934,7 @@ $productName
                           height: 24,
                           margin: const EdgeInsets.only(right: 8),
                           child: Image.network(
-                            imageUrl,
+                            getFullImageUrl(imageUrl),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(
@@ -989,9 +981,7 @@ $productName
             return ChoiceChip(
               avatar: imageUrl.isNotEmpty
                   ? Image.network(
-                      imageUrl.startsWith('http')
-                          ? imageUrl
-                          : 'https://ismartdemo.com.tw/image/$imageUrl',
+                      getFullImageUrl(imageUrl),
                       width: 24,
                       height: 24,
                       fit: BoxFit.cover,
@@ -1040,7 +1030,7 @@ $productName
                       : selectedValue['disname'] ?? '';
                   String imageUrl = selectedValue['image'] ?? '';
                   if (imageUrl.isNotEmpty && !imageUrl.startsWith('http')) {
-                    imageUrl = 'https://ismartdemo.com.tw/image/$imageUrl';
+                    imageUrl = 'https://ismartomo.com.tw/image/$imageUrl';
                   }
 
                   return Row(
@@ -1051,7 +1041,7 @@ $productName
                           height: 24,
                           margin: const EdgeInsets.only(right: 8),
                           child: Image.network(
-                            imageUrl,
+                            getFullImageUrl(imageUrl),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(
@@ -1174,7 +1164,7 @@ $productName
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Image.network(
-              item['content'],
+              getFullImageUrl(item['content']),
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder: (context, error, stackTrace) {
@@ -1321,9 +1311,7 @@ $productName
                         height: 24,
                         margin: const EdgeInsets.only(right: 8),
                         child: Image.network(
-                          imageUrl.startsWith('http')
-                              ? imageUrl
-                              : 'https://ismartdemo.com.tw/image/$imageUrl',
+                          getFullImageUrl(imageUrl),
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
@@ -1373,10 +1361,8 @@ $productName
                     height: 24,
                     margin: const EdgeInsets.only(right: 8),
                     child: Image.network(
-                      selectedImage.startsWith('http')
-                          ? selectedImage
-                          : 'https://ismartdemo.com.tw/image/$selectedImage',
-                      fit: BoxFit.contain,
+                      getFullImageUrl(selectedImage),
+                      fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(
                           Icons.image_not_supported,
@@ -1513,29 +1499,23 @@ $productName
 
   List<String> _getAllProductImages() {
     List<String> images = [];
-    
-    if (_productData['thumb'] != null) {
-      images.add(_productData['thumb']);
-    }
-    
-    if (_productData['images'] != null && _productData['images'] is List) {
+    if (_productData['images'] != null && _productData['images'] is List && (_productData['images'] as List).isNotEmpty) {
       for (var image in _productData['images']) {
         if (image['image'] != null) {
-          images.add(image['image']);
+          images.add(getFullImageUrl(image['image']));
         }
       }
     }
-    
+    if (images.isEmpty && _productData['thumb'] != null) {
+      images.add(getFullImageUrl(_productData['thumb']));
+    }
     return images;
   }
 
   void _updateCurrentImage(String? newImage) {
     if (newImage != null && newImage.isNotEmpty) {
       setState(() {
-        String fullImageUrl = newImage.startsWith('http')
-            ? newImage
-            : 'https://ismartdemo.com.tw/image/$newImage';
-        
+        String fullImageUrl = getFullImageUrl(newImage);
         _currentImage = fullImageUrl;
         
         if (!_carouselImages.contains(newImage)) {
@@ -1550,10 +1530,14 @@ $productName
     setState(() {
       _currentImageIndex = index;
       if (index < _carouselImages.length) {
-        _currentImage = _carouselImages[index].startsWith('http')
-            ? _carouselImages[index]
-            : 'https://ismartdemo.com.tw/image/${_carouselImages[index]}';
+        _currentImage = getFullImageUrl(_carouselImages[index]);
       }
     });
+  }
+
+  String getFullImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http')) return url;
+    return 'https://ismartomo.com.tw/image/$url';
   }
 }
