@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../services/user_service.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -86,13 +87,13 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       // 確保所有必要的字段都有值
-      if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
-        setState(() {
-          _errorMessage = '請選擇區域';
-          _isLoading = false;
-        });
-        return false;
-      }
+      // if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
+      //   setState(() {
+      //     _errorMessage = '請選擇區域';
+      //     _isLoading = false;
+      //   });
+      //   return false;
+      // }
 
       // 準備註冊數據
       final userData = {
@@ -102,20 +103,27 @@ class _RegisterPageState extends State<RegisterPage> {
         'password': _passwordController.text,
         'confirm': _confirmPasswordController.text,
         'telephone': _telephoneController.text.trim(),
-        'address_1': _address1Controller.text.trim(),
-        'address_2': _address2Controller.text.trim().isNotEmpty ? _address2Controller.text.trim() : '',
-        'city': _cityController.text.trim(),
-        'postcode': _postcodeController.text.trim(),
-        'country_id': '206', // 台灣
-        'zone_id': _selectedZoneId!,
+        // 'address_1': _address1Controller.text.trim(),
+        // 'address_2': _address2Controller.text.trim().isNotEmpty ? _address2Controller.text.trim() : '',
+        // 'city': _cityController.text.trim(),
+        // 'postcode': _postcodeController.text.trim(),
+        // 'country_id': '206', // 台灣
+        // 'address_1': '',
+        // 'address_2': '',
+        // 'city': '',
+        // 'postcode': '',
+        // 'country_id': '206',
+        // 'zone_id': _selectedZoneId!,
         'fax': _faxController.text.trim().isNotEmpty ? _faxController.text.trim() : '',
-        'custom_field[account][1]': '711',
-        'newsletter': '0',
-        'company': '', // 公司欄位，必須傳遞空白
+        // 'custom_field[account][1]': '711',
+        // 'newsletter': '0',
+        // 'company': '', // 公司欄位，必須傳遞空白
       };
       
       // 調用註冊 API
       final response = await _apiService.register(userData);
+
+      print(response);
       
       setState(() {
         _isLoading = false;
@@ -194,6 +202,53 @@ class _RegisterPageState extends State<RegisterPage> {
       });
       return false;
     }
+  }
+
+  void _showPrivacyTermsDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return FutureBuilder<String>(
+          future: _apiService.getPrivacyTerms(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const AlertDialog(
+                title: Text('服務與隱私'),
+                content: SizedBox(
+                  height: 80,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return const AlertDialog(
+                title: Text('服務與隱私'),
+                content: Text('無法載入條款內容，請稍後再試。'),
+              );
+            }
+            return AlertDialog(
+              title: const Text('服務與隱私'),
+              content: SizedBox(
+                width: double.maxFinite,
+                height: 400,
+                child: SingleChildScrollView(
+                  child: Html(
+                    data: snapshot.data ?? '',
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('關閉'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -476,123 +531,123 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
               
               // 分組標題 - 地址資料
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
-                child: Text(
-                  '地址資料',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.purple.shade800,
-                  ),
-                ),
-              ),
+              // Padding(
+              //   padding: const EdgeInsets.only(bottom: 8.0, top: 8.0),
+              //   child: Text(
+              //     '地址資料',
+              //     style: TextStyle(
+              //       fontSize: 18,
+              //       fontWeight: FontWeight.bold,
+              //       color: Colors.purple.shade800,
+              //     ),
+              //   ),
+              // ),
               
-              // 地址1輸入框
-              TextFormField(
-                controller: _address1Controller,
-                decoration: InputDecoration(
-                  labelText: '地址',
-                  hintText: '請輸入您的地址',
-                  prefixIcon: const Icon(Icons.home),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '請輸入地址';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+              // // 地址1輸入框
+              // TextFormField(
+              //   controller: _address1Controller,
+              //   decoration: InputDecoration(
+              //     labelText: '地址',
+              //     hintText: '請輸入您的地址',
+              //     prefixIcon: const Icon(Icons.home),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(8),
+              //     ),
+              //   ),
+              //   validator: (value) {
+              //     if (value == null || value.isEmpty) {
+              //       return '請輸入地址';
+              //     }
+              //     return null;
+              //   },
+              // ),
+              // const SizedBox(height: 16),
               
-              // 地址2輸入框
-              TextFormField(
-                controller: _address2Controller,
-                decoration: InputDecoration(
-                  labelText: '地址 (選填)',
-                  hintText: '請輸入您的補充地址',
-                  prefixIcon: const Icon(Icons.home_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              // // 地址2輸入框
+              // TextFormField(
+              //   controller: _address2Controller,
+              //   decoration: InputDecoration(
+              //     labelText: '地址 (選填)',
+              //     hintText: '請輸入您的補充地址',
+              //     prefixIcon: const Icon(Icons.home_outlined),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(8),
+              //     ),
+              //   ),
+              // ),
+              // const SizedBox(height: 16),
               
-              // 城市輸入框
-              TextFormField(
-                controller: _cityController,
-                decoration: InputDecoration(
-                  labelText: '城市',
-                  hintText: '請輸入您所在的城市',
-                  prefixIcon: const Icon(Icons.location_city),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '請輸入城市';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+              // // 城市輸入框
+              // TextFormField(
+              //   controller: _cityController,
+              //   decoration: InputDecoration(
+              //     labelText: '城市',
+              //     hintText: '請輸入您所在的城市',
+              //     prefixIcon: const Icon(Icons.location_city),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(8),
+              //     ),
+              //   ),
+              //   validator: (value) {
+              //     if (value == null || value.isEmpty) {
+              //       return '請輸入城市';
+              //     }
+              //     return null;
+              //   },
+              // ),
+              // const SizedBox(height: 16),
               
-              // 郵遞區號輸入框
-              TextFormField(
-                controller: _postcodeController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: '郵遞區號',
-                  hintText: '請輸入您的郵遞區號',
-                  prefixIcon: const Icon(Icons.markunread_mailbox),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '請輸入郵遞區號';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
+              // // 郵遞區號輸入框
+              // TextFormField(
+              //   controller: _postcodeController,
+              //   keyboardType: TextInputType.number,
+              //   decoration: InputDecoration(
+              //     labelText: '郵遞區號',
+              //     hintText: '請輸入您的郵遞區號',
+              //     prefixIcon: const Icon(Icons.markunread_mailbox),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(8),
+              //     ),
+              //   ),
+              //   validator: (value) {
+              //     if (value == null || value.isEmpty) {
+              //       return '請輸入郵遞區號';
+              //     }
+              //     return null;
+              //   },
+              // ),
+              // const SizedBox(height: 16),
               
-              // 區域選擇
-              DropdownButtonFormField<String>(
-                value: _selectedZoneId,
-                decoration: InputDecoration(
-                  labelText: '區域',
-                  prefixIcon: const Icon(Icons.map),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                items: _zones.map((zone) {
-                  return DropdownMenuItem<String>(
-                    value: zone['zone_id'],
-                    child: Text(zone['name']),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedZoneId = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return '請選擇區域';
-                  }
-                  return null;
-                },
-                hint: const Text('請選擇區域'),
-              ),
-              const SizedBox(height: 16),
+              // // 區域選擇
+              // DropdownButtonFormField<String>(
+              //   value: _selectedZoneId,
+              //   decoration: InputDecoration(
+              //     labelText: '區域',
+              //     prefixIcon: const Icon(Icons.map),
+              //     border: OutlineInputBorder(
+              //       borderRadius: BorderRadius.circular(8),
+              //     ),
+              //   ),
+              //   items: _zones.map((zone) {
+              //     return DropdownMenuItem<String>(
+              //       value: zone['zone_id'],
+              //       child: Text(zone['name']),
+              //     );
+              //   }).toList(),
+              //   onChanged: (value) {
+              //     setState(() {
+              //       _selectedZoneId = value;
+              //     });
+              //   },
+              //   validator: (value) {
+              //     if (value == null || value.isEmpty) {
+              //       return '請選擇區域';
+              //     }
+              //     return null;
+              //   },
+              //   hint: const Text('請選擇區域'),
+              // ),
+              // const SizedBox(height: 16),
               
               // 同意條款
               Row(
@@ -614,30 +669,9 @@ class _RegisterPageState extends State<RegisterPage> {
                           const TextSpan(text: '我已閱讀並同意 '),
                           WidgetSpan(
                             child: GestureDetector(
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('服務條款功能待實現')),
-                                );
-                              },
+                              onTap: _showPrivacyTermsDialog,
                               child: const Text(
-                                '服務條款',
-                                style: TextStyle(
-                                  color: Colors.purple,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const TextSpan(text: ' 和 '),
-                          WidgetSpan(
-                            child: GestureDetector(
-                              onTap: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('隱私政策功能待實現')),
-                                );
-                              },
-                              child: const Text(
-                                '隱私政策',
+                                '服務與隱私',
                                 style: TextStyle(
                                   color: Colors.purple,
                                   fontWeight: FontWeight.bold,

@@ -279,7 +279,7 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                   borderRadius: BorderRadius.circular(4),
                   child: image.isNotEmpty
                     ? Image.network(
-                        getFullImageUrl(image),
+                        image,
                         width: 60,
                         height: 60,
                         fit: BoxFit.cover,
@@ -663,12 +663,5 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     });
     
     return result;
-  }
-
-  // 圖片網址處理輔助函數
-  String getFullImageUrl(String? url) {
-    if (url == null || url.isEmpty) return '';
-    if (url.startsWith('http')) return url;
-    return 'https://ismartomo.com.tw/image/$url';
   }
 } 

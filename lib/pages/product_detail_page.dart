@@ -56,7 +56,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           _initializePrice();
           _carouselImages = _getAllProductImages();
           if (_carouselImages.isNotEmpty) {
-            _currentImage = _carouselImages[0];
+            _currentImage = _carouselImages[0].startsWith('http')
+                ? _carouselImages[0]
+                : 'https://ismartomo.com.tw/image/${_carouselImages[0]}';
           }
         });
 
@@ -74,7 +76,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               _initializePrice();
               _carouselImages = _getAllProductImages();
               if (_carouselImages.isNotEmpty) {
-                _currentImage = _carouselImages[0];
+                _currentImage = _carouselImages[0].startsWith('http')
+                    ? _carouselImages[0]
+                    : 'https://ismartomo.com.tw/image/${_carouselImages[0]}';
               }
               _initializeOptions();
             });
@@ -490,7 +494,9 @@ $productName
                                             width: double.infinity,
                                             margin: const EdgeInsets.symmetric(horizontal: 5.0),
                                             child: Image.network(
-                                              getFullImageUrl(image),
+                                              image.startsWith('http')
+                                                  ? image
+                                                  : 'https://ismartomo.com.tw/image/$image',
                                               fit: BoxFit.contain,
                                               errorBuilder: (context, error, stackTrace) {
                                                 return const Center(
@@ -872,7 +878,9 @@ $productName
             return ChoiceChip(
               avatar: imageUrl.isNotEmpty
                   ? Image.network(
-                      getFullImageUrl(imageUrl),
+                      imageUrl.startsWith('http')
+                          ? imageUrl
+                          : 'https://ismartomo.com.tw/image/$imageUrl',
                       width: 24,
                       height: 24,
                       fit: BoxFit.cover,
@@ -934,7 +942,7 @@ $productName
                           height: 24,
                           margin: const EdgeInsets.only(right: 8),
                           child: Image.network(
-                            getFullImageUrl(imageUrl),
+                            imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(
@@ -981,7 +989,9 @@ $productName
             return ChoiceChip(
               avatar: imageUrl.isNotEmpty
                   ? Image.network(
-                      getFullImageUrl(imageUrl),
+                      imageUrl.startsWith('http')
+                          ? imageUrl
+                          : 'https://ismartomo.com.tw/image/$imageUrl',
                       width: 24,
                       height: 24,
                       fit: BoxFit.cover,
@@ -1041,7 +1051,7 @@ $productName
                           height: 24,
                           margin: const EdgeInsets.only(right: 8),
                           child: Image.network(
-                            getFullImageUrl(imageUrl),
+                            imageUrl,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return const Icon(
@@ -1164,7 +1174,7 @@ $productName
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Image.network(
-              getFullImageUrl(item['content']),
+              item['content'],
               fit: BoxFit.cover,
               width: double.infinity,
               errorBuilder: (context, error, stackTrace) {
@@ -1311,7 +1321,9 @@ $productName
                         height: 24,
                         margin: const EdgeInsets.only(right: 8),
                         child: Image.network(
-                          getFullImageUrl(imageUrl),
+                          imageUrl.startsWith('http')
+                              ? imageUrl
+                              : 'https://ismartomo.com.tw/image/$imageUrl',
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
@@ -1361,8 +1373,10 @@ $productName
                     height: 24,
                     margin: const EdgeInsets.only(right: 8),
                     child: Image.network(
-                      getFullImageUrl(selectedImage),
-                      fit: BoxFit.cover,
+                      selectedImage.startsWith('http')
+                          ? selectedImage
+                          : 'https://ismartomo.com.tw/image/$selectedImage',
+                      fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) {
                         return const Icon(
                           Icons.image_not_supported,
@@ -1499,23 +1513,29 @@ $productName
 
   List<String> _getAllProductImages() {
     List<String> images = [];
-    if (_productData['images'] != null && _productData['images'] is List && (_productData['images'] as List).isNotEmpty) {
+    
+    if (_productData['thumb'] != null) {
+      images.add(_productData['thumb']);
+    }
+    
+    if (_productData['images'] != null && _productData['images'] is List) {
       for (var image in _productData['images']) {
         if (image['image'] != null) {
-          images.add(getFullImageUrl(image['image']));
+          images.add(image['image']);
         }
       }
     }
-    if (images.isEmpty && _productData['thumb'] != null) {
-      images.add(getFullImageUrl(_productData['thumb']));
-    }
+    
     return images;
   }
 
   void _updateCurrentImage(String? newImage) {
     if (newImage != null && newImage.isNotEmpty) {
       setState(() {
-        String fullImageUrl = getFullImageUrl(newImage);
+        String fullImageUrl = newImage.startsWith('http')
+            ? newImage
+            : 'https://ismartomo.com.tw/image/$newImage';
+        
         _currentImage = fullImageUrl;
         
         if (!_carouselImages.contains(newImage)) {
@@ -1530,14 +1550,10 @@ $productName
     setState(() {
       _currentImageIndex = index;
       if (index < _carouselImages.length) {
-        _currentImage = getFullImageUrl(_carouselImages[index]);
+        _currentImage = _carouselImages[index].startsWith('http')
+            ? _carouselImages[index]
+            : 'https://ismartomo.com.tw/image/${_carouselImages[index]}';
       }
     });
-  }
-
-  String getFullImageUrl(String? url) {
-    if (url == null || url.isEmpty) return '';
-    if (url.startsWith('http')) return url;
-    return 'https://ismartomo.com.tw/image/$url';
   }
 }

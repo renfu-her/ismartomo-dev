@@ -342,7 +342,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
             // 2. 確認收件地址
             _buildSectionTitle('2. 確認收件地址'),
             const SizedBox(height: 8),
-            _buildAddressCard(),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildAddressCard(),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
             
             // 3. 確認訂單內容
@@ -504,6 +510,51 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
   
+  // 地址操作按鈕（新增、重新整理）
+  Widget _buildAddressActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton.icon(
+          icon: const Icon(Icons.refresh),
+          label: const Text('重新整理'),
+          onPressed: () {
+            _fetchData();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('正在重新整理地址資料...'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+          },
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.blue,
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          ),
+        ),
+        TextButton.icon(
+          icon: const Icon(Icons.add),
+          label: const Text('新增'),
+          onPressed: () async {
+            final result = await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const AddressListPage(),
+              ),
+            );
+            if (result == true) {
+              _fetchData();
+            }
+          },
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.blue,
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          ),
+        ),
+      ],
+    );
+  }
+  
   Widget _buildAddressCard() {
     if (_addressList.isEmpty) {
       return Card(
@@ -525,6 +576,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 8),
+              _buildAddressActionButtons(),
             ],
           ),
         ),
@@ -557,30 +610,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       ),
                     ),
                   ),
-                  // 新增地址按鈕
-                  TextButton.icon(
-                    icon: const Icon(Icons.add),
-                    label: const Text('新增'),
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AddressListPage(),
-                        ),
-                      );
-                      if (result == true) {
-                        _fetchData();
-                      }
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.blue,
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    ),
-                  ),
                 ],
               ),
+              const SizedBox(height: 8),
+              _buildAddressActionButtons(),
               const SizedBox(height: 12),
-              
               // 使用下拉選單選擇地址
               Container(
                 width: double.infinity,
@@ -625,9 +659,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   },
                 ),
               ),
-              
               const SizedBox(height: 16),
-              
               // 顯示選中地址的詳細信息
               if (_selectedAddressId != null) ...[
                 _buildSelectedAddressDetails(),
@@ -638,11 +670,23 @@ class _CheckoutPageState extends State<CheckoutPage> {
       );
     }
     
-    // 只有一個地址時直接顯示
-    return Column(
-      children: [
-        _buildSelectedAddressDetails(),
-      ],
+    // 只有一個地址時直接顯示，並加上操作按鈕
+    return Card(
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildAddressActionButtons(),
+            const SizedBox(height: 8),
+            _buildSelectedAddressDetails(),
+          ],
+        ),
+      ),
     );
   }
   
