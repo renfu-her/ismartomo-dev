@@ -1440,6 +1440,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       String totalStr = item['total'] ?? '';
       totalStr = totalStr.replaceAll(RegExp(r'[^\d.]'), '');
       double total = double.tryParse(totalStr) ?? 0.0;
+
+      print('商品資訊: $item');
       
       orderData['products[$i][product_id]'] = item['product_id']?.toString() ?? '';
       orderData['products[$i][name]'] = _decodeHtmlEntities(item['name'] ?? '');
@@ -1453,15 +1455,31 @@ class _CheckoutPageState extends State<CheckoutPage> {
       orderData['products[$i][reward]'] = '0';
       
       // 處理商品選項
-      if (item.containsKey('option') && item['option'] is List) {
-        final options = item['option'];
-        for (int j = 0; j < options.length; j++) {
-          final option = options[j];
-          orderData['products[$i][option][$j][product_option_id]'] = option['product_option_id']?.toString() ?? '';
-          orderData['products[$i][option][$j][product_option_value_id]'] = option['product_option_value_id']?.toString() ?? '';
-          orderData['products[$i][option][$j][name]'] = _decodeHtmlEntities(option['name'] ?? '');
-          orderData['products[$i][option][$j][value]'] = _decodeHtmlEntities(option['value'] ?? '');
-          orderData['products[$i][option][$j][type]'] = option['type'] ?? '';
+      if (item.containsKey('option') && item['option'] is String) {
+        try {
+          // 解析 option JSON 字符串
+          final Map<String, dynamic> optionMap = jsonDecode(item['option']);
+          int optionIndex = 0;
+          
+          // 遍歷 option 映射
+          optionMap.forEach((optionId, valueId) {
+            // 在 optiondata 中查找對應的詳細信息
+            final optionData = item['optiondata']?.firstWhere(
+              (data) => data['product_option_id'].toString() == optionId,
+              orElse: () => null,
+            );
+            
+            if (optionData != null) {
+              orderData['products[$i][option][$optionIndex][product_option_id]'] = optionId;
+              orderData['products[$i][option][$optionIndex][product_option_value_id]'] = valueId.toString();
+              orderData['products[$i][option][$optionIndex][name]'] = _decodeHtmlEntities(optionData['name'] ?? '');
+              orderData['products[$i][option][$optionIndex][value]'] = _decodeHtmlEntities(optionData['value'] ?? '');
+              orderData['products[$i][option][$optionIndex][type]'] = optionData['type'] ?? '';
+              optionIndex++;
+            }
+          });
+        } catch (e) {
+          debugPrint('解析商品選項失敗: ${e.toString()}');
         }
       }
     }
@@ -1477,11 +1495,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
     
     // 設置運費資訊
     if (shippingFee > 0) {
-      orderData['shipping_method'] = '一般運費';
-      orderData['shipping_code'] = 'shipping.regular';
+      orderData['shipping_method[title]'] = '一般運費';
+      orderData['shipping_method[code]'] = 'shipping.regular';
     } else {
-      orderData['shipping_method'] = '免運費';
-      orderData['shipping_code'] = 'shipping.free';
+      orderData['shipping_method[title]'] = '免運費';
+      orderData['shipping_method[code]'] = 'shipping.free';
     }
     
     // 構建訂單摘要

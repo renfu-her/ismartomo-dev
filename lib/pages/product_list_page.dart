@@ -396,7 +396,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                   ),
                                 // 顯示價格（如果有特價則顯示特價，否則顯示原價）
                                 Text(
-                                  _formatPrice(product['special']),
+                                  _formatPrice(product['special'] != false ? product['special'] : product['price']),
                                   style: const TextStyle(
                                     fontSize: 14.0,
                                     color: Colors.red,

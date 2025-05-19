@@ -2,6 +2,10 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../main.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   static const String _baseUrl =
@@ -155,7 +159,7 @@ class ApiService {
       params['order'] = order;
     }
 
-    return _get('gws_products', extraParams: params);
+    return _get('gws_appproducts', extraParams: params);
   }
 
   // 獲取產品詳情
@@ -1049,6 +1053,39 @@ class ApiService {
     }
   }
 
+  // 寫入訂單 debug 資料到指定 logs 目錄
+  Future<void> _writeOrderDebugToFile(Map<String, dynamic> data) async {
+    try {
+      Directory? targetDir;
+      String filePath = '';
+      if (!kIsWeb && Platform.isAndroid) {
+        // 取得 Android 外部儲存目錄
+        final extDir = Directory('/storage/emulated/0/Android/data/com.rc168.ismartdemo/files/logs');
+        if (!await extDir.exists()) {
+          await extDir.create(recursive: true);
+        }
+        final now = DateTime.now();
+        final formatter = DateFormat('yyyyMMdd_HHmmss');
+        final fileName = 'order_data_${formatter.format(now)}.log';
+        filePath = '${extDir.path}/$fileName';
+        targetDir = extDir;
+      } else {
+        // 其他平台維持原本寫入 app 文件夾
+        final directory = await getApplicationDocumentsDirectory();
+        targetDir = directory;
+        final now = DateTime.now();
+        final formatter = DateFormat('yyyyMMdd_HHmmss');
+        final fileName = 'order_data_${formatter.format(now)}.log';
+        filePath = '${directory.path}/$fileName';
+      }
+      final file = File(filePath);
+      await file.writeAsString(const JsonEncoder.withIndent('  ').convert(data));
+      debugPrint('訂單 debug 資料已寫入: $filePath');
+    } catch (e) {
+      debugPrint('寫入訂單 debug 檔案失敗: $e');
+    }
+  }
+
   // 創建訂單
   Future<Map<String, dynamic>> createOrder(
     String customerId,
@@ -1066,9 +1103,6 @@ class ApiService {
       // 創建 FormData
       final formData = FormData.fromMap(orderData);
 
-      print(formData);
-      print(orderData);
-
       // 發送請求
       final response = await _dio.post(
         url,
@@ -1083,9 +1117,11 @@ class ApiService {
         ),
       );
 
-      // 記錄響應狀態碼和數據
-      debugPrint('訂單提交響應狀態碼: ${response.statusCode}');
-      debugPrint('訂單提交響應數據: ${response.data}');
+      await _writeOrderDebugToFile({
+        // 'formData': formData, // 不可序列化
+        'orderData': orderData,
+        'orderResponse': response.data,
+      });
 
       if (response.statusCode == 200) {
         if (response.data is Map) {

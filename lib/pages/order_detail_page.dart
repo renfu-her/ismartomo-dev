@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../services/user_service.dart';
+import 'dart:convert';
 
 class OrderDetailPage extends StatefulWidget {
   final String orderId;
@@ -271,6 +272,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
             final total = product['total'] ?? '';
             final image = product['image'] ?? '';
             
+            // 解析商品選項
+            final List<Map<String, String>> options = _parseProductOptions(product);
+            
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -320,8 +324,9 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      if (product['option'] != null && (product['option'] as List).isNotEmpty)
-                        ...(product['option'] as List).map((option) => Padding(
+                      // 顯示商品選項
+                      if (options.isNotEmpty) ...[
+                        ...options.map((option) => Padding(
                           padding: const EdgeInsets.only(bottom: 2),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,7 +353,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
                             ],
                           ),
                         )).toList(),
-                      const SizedBox(height: 8),
+                        const SizedBox(height: 8),
+                      ],
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -430,7 +436,8 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
   Widget _buildShippingSection() {
     final name = '${_orderDetail['shipping_firstname'] ?? ''} ${_orderDetail['shipping_lastname'] ?? ''}'.trim();
     final cellphone = _orderDetail['shipping_cellphone'] ?? '';
-    final address = _orderDetail['shipping_address_format'] ?? '';
+    // final address = _orderDetail['shipping_address_format'] ?? '';
+    final address = (_orderDetail['shipping_postcode'] ?? '') + (_orderDetail['shipping_zone'] ?? '') + (_orderDetail['shipping_city'] ?? '') + (_orderDetail['shipping_address_1'] ?? '');
     final method = _orderDetail['shipping_method'] ?? '';
     
     return Column(
@@ -663,5 +670,80 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
     });
     
     return result;
+  }
+
+  // 解析商品選項
+  List<Map<String, String>> _parseProductOptions(Map<String, dynamic> product) {
+    List<Map<String, String>> parsedOptions = [];
+    
+    // 優先使用 optiondata 欄位
+    if (product.containsKey('optiondata') && product['optiondata'] is List) {
+      final List<dynamic> optionDataList = product['optiondata'];
+      
+      for (var option in optionDataList) {
+        if (option is Map && option.containsKey('name') && option.containsKey('value')) {
+          parsedOptions.add({
+            'name': _formatSpecialCharacters(option['name'] ?? ''),
+            'value': _formatSpecialCharacters(option['value'] ?? ''),
+          });
+        }
+      }
+      
+      if (parsedOptions.isNotEmpty) {
+        return parsedOptions;
+      }
+    }
+    
+    // 如果 optiondata 為空或解析失敗，嘗試使用 option 欄位
+    if (product.containsKey('option')) {
+      try {
+        if (product['option'] is String) {
+          final String optionStr = product['option'];
+          
+          if (optionStr == "[]" || optionStr.isEmpty) {
+            return parsedOptions;
+          }
+          
+          final Map<String, dynamic> optionsMap = json.decode(optionStr);
+          return _processOptionsMap(product['product_id']?.toString() ?? '', optionsMap);
+        } 
+        else if (product['option'] is List) {
+          final List<dynamic> optionsList = product['option'];
+          
+          for (var option in optionsList) {
+            if (option is Map && option.containsKey('name') && option.containsKey('value')) {
+              parsedOptions.add({
+                'name': _formatSpecialCharacters(option['name'] ?? ''),
+                'value': _formatSpecialCharacters(option['value'] ?? ''),
+              });
+            }
+          }
+          
+          return parsedOptions;
+        }
+        else if (product['option'] is Map) {
+          final Map<String, dynamic> optionsMap = Map<String, dynamic>.from(product['option']);
+          return _processOptionsMap(product['product_id']?.toString() ?? '', optionsMap);
+        }
+      } catch (e) {
+        debugPrint('解析選項失敗: ${e.toString()}');
+      }
+    }
+    
+    return parsedOptions;
+  }
+  
+  // 處理選項映射
+  List<Map<String, String>> _processOptionsMap(String productId, Map<String, dynamic> optionsMap) {
+    List<Map<String, String>> parsedOptions = [];
+    
+    optionsMap.forEach((optionId, valueId) {
+      parsedOptions.add({
+        'name': '選項 $optionId',
+        'value': valueId.toString(),
+      });
+    });
+    
+    return parsedOptions;
   }
 } 
